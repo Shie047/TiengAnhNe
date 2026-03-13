@@ -128,7 +128,10 @@
   <div class="app" id="mainApp" style="opacity: 0; pointer-events: none; transition: 0.5s;">
     <header class="panel">
       <div class="title" id="headerTitle">Góc Học Tập</div>
-      <button class="btn primary" id="btnCheckin">Điểm danh</button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn primary" id="btnCheckin">Điểm danh</button>
+        <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Đăng xuất</button>
+      </div>
     </header>
 
     <aside class="panel" style="text-align: center;">
@@ -184,11 +187,11 @@
   </div>
 
 <script type="module">
+  // Thêm thư viện onAuthStateChanged và signOut từ Firebase Auth
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
-  // Cấu hình Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyDEyyfIjheNTY3O7klH7tkpGKXEXm2ku4I",
     authDomain: "dangnhap-5069e.firebaseapp.com",
@@ -324,14 +327,12 @@
     return { w: parts[0], m: parts[1] };
   });
 
-  // Biến toàn cục
   let state = null;
   let currentUserDocId = null; 
   let testDirection = 'en-vi'; 
   let currentWordAudio = '';   
   let tempUserName = "";
 
-  // Tạo state mặc định
   function getDefaultState(name, method) {
     let normalized = name.toLowerCase();
     let isCrush = (normalized === 'yến ngọc' || normalized === 'yen ngoc');
@@ -345,7 +346,6 @@
     };
   }
 
-  // Hàm lưu lên Firebase (Thay thế cho localStorage cũ)
   async function save() { 
     if(currentUserDocId && state) {
       try {
@@ -486,22 +486,20 @@
     document.getElementById('step1Name').style.display = 'block';
   };
 
-  // Xử lý lấy dữ liệu từ Firebase
   async function fetchUserData(method) {
     const docRef = doc(db, "users", currentUserDocId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       state = docSnap.data();
-      // Chèn thêm từ vựng mới nếu database cũ bị thiếu
       if(state.words.length < VOCAB_DB.length) {
         for(let i = state.words.length; i < VOCAB_DB.length; i++) {
           state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
         }
       }
     } else {
-      state = getDefaultState(tempUserName, method);
-      await setDoc(docRef, state); // Ghi file mới lên Firestore
+      state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
+      await setDoc(docRef, state);
     }
 
     document.getElementById('loginScreen').style.display = 'none';
@@ -513,14 +511,18 @@
     showToast(`Chào mừng ${state.userName} quay lại!`);
   }
 
-  // Nút Khách
+  // XỬ LÝ NÚT KHÁCH
   document.getElementById('btnGuestLogin').onclick = async () => {
     showToast('Đang tải dữ liệu...');
     currentUserDocId = "guest_" + tempUserName.toLowerCase().replace(/\s+/g, '_');
+    
+    // Lưu ID khách vào trình duyệt để lần sau tự vào
+    localStorage.setItem('saved_guest_id', currentUserDocId);
+    
     await fetchUserData('guest');
   };
 
-  // Nút Google
+  // XỬ LÝ NÚT GOOGLE
   document.getElementById('btnGoogleLogin').onclick = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -532,6 +534,19 @@
       showToast('Đăng nhập Google thất bại!');
     }
   };
+
+  // NÚT ĐĂNG XUẤT MỚI
+  document.getElementById('btnLogout').onclick = async () => {
+    // Nếu đang là Google thì đăng xuất Google
+    if (currentUserDocId && currentUserDocId.startsWith('google_')) {
+      await signOut(auth);
+    }
+    // Xóa nhớ dữ liệu Khách trong trình duyệt
+    localStorage.removeItem('saved_guest_id');
+    // Tải lại trang web về lúc ban đầu
+    location.reload();
+  };
+
 
   // --- LOGIC SỰ KIỆN HỌC TẬP ---
 
@@ -587,8 +602,26 @@
     if (e.key === 'Enter') document.getElementById('btnCheck').click();
   });
 
-  // Hiển thị khung đăng nhập ban đầu
-  document.getElementById('loginScreen').style.display = 'flex';
+
+  // --- TỰ ĐỘNG KIỂM TRA ĐĂNG NHẬP KHI MỞ WEB ---
+  const savedGuestId = localStorage.getItem('saved_guest_id');
+
+  if (savedGuestId) {
+    // Nếu trước đó đã đăng nhập bằng Khách
+    currentUserDocId = savedGuestId;
+    fetchUserData('guest');
+  } else {
+    // Chờ Firebase kiểm tra xem trước đó có đang nhập bằng Google không
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUserDocId = "google_" + user.uid;
+        await fetchUserData('google');
+      } else {
+        // Không có tài khoản nào được lưu, hiện khung đăng nhập
+        document.getElementById('loginScreen').style.display = 'flex';
+      }
+    });
+  }
 
 </script>
 </body>
