@@ -46,6 +46,7 @@
     .btn.primary { background: linear-gradient(90deg, var(--accent1), var(--accent2)); }
     .btn.danger { background: rgba(233, 69, 96, 0.3); border: 1px solid var(--accent1); }
     .btn.danger:hover { background: var(--accent1); }
+    .btn.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
     
     .avatar { 
       width: clamp(80px, 20vw, 100px); height: clamp(80px, 20vw, 100px); border-radius: 50%; margin: 0 auto 15px; 
@@ -128,8 +129,9 @@
   <div class="app" id="mainApp" style="opacity: 0; pointer-events: none; transition: 0.5s;">
     <header class="panel">
       <div class="title" id="headerTitle">Góc Học Tập</div>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn primary" id="btnCheckin">Điểm danh</button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+        <button class="btn warning" id="btnReview" style="padding: 8px 15px; font-size: 14px;">Ôn bài</button>
+        <button class="btn primary" id="btnCheckin" style="padding: 8px 15px; font-size: 14px;">Điểm danh</button>
         <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Đăng xuất</button>
       </div>
     </header>
@@ -186,8 +188,31 @@
     </div>
   </div>
 
+  <div class="modal" id="reviewModal">
+    <div class="modal-box" style="max-width: 500px; padding: 30px;">
+      <h2 style="color: var(--accent2); margin-bottom: 10px;">Ôn Bài (<span id="revProgress">1</span>/3)</h2>
+      <p id="revHardModeTip" style="color: var(--success); font-size: 14px; font-style: italic; display: none;">Chế độ Siêu Khó: Nghe và gõ cả 2!</p>
+      
+      <div id="revWordDisplay" style="font-size: clamp(30px, 8vw, 40px); font-weight: bold; margin: 15px 0;">---</div>
+      <button class="btn" onclick="playReviewAudio()" style="margin: 0 auto 20px;">🔊 Nghe phát âm</button>
+      
+      <input type="text" id="revInputEn" class="focus-input" placeholder="Gõ từ tiếng Anh..." autocomplete="off" style="margin-bottom: 10px; border-color: #f59e0b;">
+      <input type="text" id="revInputVi" class="focus-input" placeholder="Gõ nghĩa tiếng Việt..." autocomplete="off" style="margin-bottom: 20px; border-color: #f59e0b;">
+      
+      <button class="btn warning" id="btnCheckReview" style="width: 100%; margin-bottom: 10px;">Kiểm tra trí nhớ</button>
+      <button class="btn" id="btnCancelReview" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Thoát ôn tập</button>
+    </div>
+  </div>
+
+  <div class="modal" id="punishModal">
+    <div class="modal-box" style="border-color: #e94560;">
+      <h2 style="color: #e94560; margin-bottom: 15px; font-size: 30px;">Trời ơiii 😤</h2>
+      <p id="punishMsg" style="color: #fff; margin-bottom: 25px; font-size: 18px; line-height: 1.5;"></p>
+      <button class="btn primary" onclick="closePunishAndNext()" style="width: 100%;">Dạ, em biết rồi 🥺</button>
+    </div>
+  </div>
+
 <script type="module">
-  // Thêm thư viện onAuthStateChanged và signOut từ Firebase Auth
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
   import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
@@ -216,12 +241,11 @@
   ];
 
   const SECRET_HINTS = [
-    "Hint: Người làm ra web này rất thích nụ cười của em.",
+    "Hint: Người làm ra web này rất thích nụ cười của nàng lắm ó.",
     "Hint: Học mệt thì nghỉ ngơi, đừng ép bản thân quá nhé.",
-    "Hint: 10.000 từ vựng cũng không diễn tả hết độ đáng yêu của em.",
+    "Hint: 10.000 từ vựng cũng không diễn tả hết độ đáng yêu của nàng.",
     "Hint: Cô gái tháng 3 lúc nào cũng tuyệt vời nhất.",
-    "Hint: Em cứ mạnh dạn gõ đáp án, sai thì để anh trừ điểm, không sao cả.",
-    "Hint: Cố lên nhé, anh luôn ủng hộ em!"
+    "Hint: Cố lên nhé, mìn luôn ủng hộ cou!"
   ];
 
   const RAW_VOCAB = [
@@ -333,13 +357,31 @@
   let currentWordAudio = '';   
   let tempUserName = "";
 
+  // ===== HỆ THỐNG THÔNG BÁO LÚC 00:03 =====
+  function setupDailyNotification() {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+    setInterval(() => {
+      if (Notification.permission === "granted") {
+        const now = new Date();
+        if (now.getHours() === 0 && now.getMinutes() >= 3 && localStorage.getItem('last_notified') !== now.toDateString()) {
+          new Notification("Góc Học Tập gọi nè! 🦉", {
+            body: `Chào ${state.userName || 'bạn'}, qua ngày mới rồi! Vào học vài từ vựng rồi hẵng ngủ cho ngon nhé!`,
+            icon: "https://api.dicebear.com/7.x/notionists/svg?seed=love"
+          });
+          localStorage.setItem('last_notified', now.toDateString());
+        }
+      }
+    }, 60000);
+  }
+
   function getDefaultState(name, method) {
     let normalized = name.toLowerCase();
     let isCrush = (normalized === 'yến ngọc' || normalized === 'yen ngoc');
     return { 
-      userName: name, 
-      isCrush: isCrush,
-      loginMethod: method,
+      userName: name, isCrush: isCrush, loginMethod: method,
       xp: 0, streak: 0, lastCheckin: null, 
       words: VOCAB_DB.map((v,i)=>({id:i, ...v, nextTs:0, step:0})), 
       queue: [], titleIdx: 0 
@@ -352,7 +394,7 @@
         await setDoc(doc(db, "users", currentUserDocId), state);
         updateUI(); 
       } catch (e) {
-        console.error("Lỗi khi lưu dữ liệu: ", e);
+        console.error(e);
         showToast("Lỗi đồng bộ dữ liệu!");
       }
     }
@@ -368,10 +410,8 @@
       let newIdx = 0;
       for(let i=TITLES.length-1; i>=0; i--) { if(state.xp >= TITLES[i].reqXp) { newIdx = i; break; } }
       state.titleIdx = newIdx;
-
       let curT = TITLES[state.titleIdx], nextT = TITLES[state.titleIdx + 1];
       document.getElementById('userTitle').innerText = curT.name;
-      
       if(nextT) {
         document.getElementById('xpNextLevel').innerText = `Cần ${nextT.reqXp - state.xp} EXP để lên cấp`;
         document.getElementById('titleProgress').style.width = Math.min(100, ((state.xp - curT.reqXp)/(nextT.reqXp - curT.reqXp))*100) + '%';
@@ -380,10 +420,14 @@
         document.getElementById('titleProgress').style.width = '100%';
       }
     } else {
+      // Logic lên cấp bằng số cho khách (Mỗi 100 EXP = 1 cấp)
       document.getElementById('userAvatar').style.backgroundImage = "url('https://api.dicebear.com/7.x/notionists/svg?seed=love')";
-      document.getElementById('userTitle').innerText = "Học viên chăm chỉ";
-      document.getElementById('xpNextLevel').innerText = "Chế độ danh hiệu đang ẩn";
-      document.getElementById('titleProgress').style.width = '100%';
+      let currentLevel = Math.floor(state.xp / 100) + 1;
+      let nextLevelXp = currentLevel * 100;
+      
+      document.getElementById('userTitle').innerText = `Cấp độ ${currentLevel}`;
+      document.getElementById('xpNextLevel').innerText = `Cần ${nextLevelXp - state.xp} EXP để lên Cấp ${currentLevel + 1}`;
+      document.getElementById('titleProgress').style.width = ((state.xp % 100) / 100) * 100 + '%';
     }
 
     if(state.queue.length === 0) {
@@ -406,19 +450,16 @@
   function loadWord() {
     if(state.queue.length === 0) return;
     const w = state.words.find(x => x.id === state.queue[0]);
-    
     currentWordAudio = w.w; 
     document.getElementById('focusWord').innerText = w.w;
     document.getElementById('focusMeaning').innerText = w.m;
     
     if (state.isCrush) {
-      const randomHint = SECRET_HINTS[Math.floor(Math.random() * SECRET_HINTS.length)];
-      document.getElementById('secretHint').innerText = randomHint;
+      document.getElementById('secretHint').innerText = SECRET_HINTS[Math.floor(Math.random() * SECRET_HINTS.length)];
       document.getElementById('secretHint').style.display = 'block';
     } else {
       document.getElementById('secretHint').style.display = 'none';
     }
-
     document.getElementById('focusInput').style.display = 'none';
     document.getElementById('learnControls').style.display = 'flex';
     document.getElementById('testControls').style.display = 'none';
@@ -431,15 +472,25 @@
   }
 
   function checkLevelUp(oldXp, newXp) {
-    if (!state.isCrush) return;
-    let oldIdx = 0, newIdx = 0;
-    for(let i=TITLES.length-1; i>=0; i--) { if(oldXp >= TITLES[i].reqXp) { oldIdx = i; break; } }
-    for(let i=TITLES.length-1; i>=0; i--) { if(newXp >= TITLES[i].reqXp) { newIdx = i; break; } }
-    
-    if(newIdx > oldIdx) {
-      document.getElementById('modalTitleName').innerText = TITLES[newIdx].name;
-      document.getElementById('modalMessage').innerText = TITLES[newIdx].msg;
-      document.getElementById('levelModal').style.display = 'flex';
+    if (state.isCrush) {
+      let oldIdx = 0, newIdx = 0;
+      for(let i=TITLES.length-1; i>=0; i--) { if(oldXp >= TITLES[i].reqXp) { oldIdx = i; break; } }
+      for(let i=TITLES.length-1; i>=0; i--) { if(newXp >= TITLES[i].reqXp) { newIdx = i; break; } }
+      
+      if(newIdx > oldIdx) {
+        document.getElementById('modalTitleName').innerText = TITLES[newIdx].name;
+        document.getElementById('modalMessage').innerText = TITLES[newIdx].msg;
+        document.getElementById('levelModal').style.display = 'flex';
+      }
+    } else {
+      let oldLevel = Math.floor(oldXp / 100) + 1;
+      let newLevel = Math.floor(newXp / 100) + 1;
+      
+      if (newLevel > oldLevel) {
+        document.getElementById('modalTitleName').innerText = `Cấp độ ${newLevel}`;
+        document.getElementById('modalMessage').innerText = "Tuyệt vời! Bạn vừa đạt được cấp độ mới, hãy tiếp tục cố gắng nhé!";
+        document.getElementById('levelModal').style.display = 'flex';
+      }
     }
   }
 
@@ -447,11 +498,8 @@
     const w = state.words.find(x => x.id === state.queue[0]);
     w.step++; w.nextTs = Date.now() + ([1,3,7,14][Math.min(w.step, 3)] * 86400000);
     state.queue.shift(); 
-    
-    let oldXp = state.xp;
-    state.xp += 20;
+    let oldXp = state.xp; state.xp += 20;
     showToast('Chính xác! +20 EXP');
-    
     checkLevelUp(oldXp, state.xp); 
     save(); loadWord(); 
   }
@@ -459,15 +507,11 @@
   window.playAudio = function() {
     if ('speechSynthesis' in window) {
       let u = new SpeechSynthesisUtterance(currentWordAudio);
-      u.lang = 'en-US'; 
-      window.speechSynthesis.speak(u);
-    } else {
-      showToast('Trình duyệt không hỗ trợ đọc âm thanh');
-    }
+      u.lang = 'en-US'; window.speechSynthesis.speak(u);
+    } else showToast('Trình duyệt không hỗ trợ đọc âm thanh');
   };
 
-  // --- LOGIC GIAO DIỆN ĐĂNG NHẬP ---
-
+  // --- LOGIC ĐĂNG NHẬP ---
   document.getElementById('btnNextStep').onclick = () => {
     let name = document.getElementById('loginInput').value.trim();
     if(!name) return showToast('Nhập tên để tiếp tục nhé!');
@@ -476,11 +520,9 @@
     document.getElementById('step1Name').style.display = 'none';
     document.getElementById('step2Method').style.display = 'block';
   };
-
   document.getElementById('loginInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') document.getElementById('btnNextStep').click();
   });
-
   document.getElementById('btnBackStep').onclick = () => {
     document.getElementById('step2Method').style.display = 'none';
     document.getElementById('step1Name').style.display = 'block';
@@ -489,7 +531,6 @@
   async function fetchUserData(method) {
     const docRef = doc(db, "users", currentUserDocId);
     const docSnap = await getDoc(docRef);
-
     if (docSnap.exists()) {
       state = docSnap.data();
       if(state.words.length < VOCAB_DB.length) {
@@ -501,70 +542,47 @@
       state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
       await setDoc(docRef, state);
     }
-
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.opacity = '1';
     document.getElementById('mainApp').style.pointerEvents = 'auto';
     document.getElementById('headerTitle').innerText = state.isCrush ? "Góc của Yến Ngọc" : "Góc Học Tập";
     
-    initQueue();
+    initQueue(); setupDailyNotification();
     showToast(`Chào mừng ${state.userName} quay lại!`);
   }
 
-  // XỬ LÝ NÚT KHÁCH
   document.getElementById('btnGuestLogin').onclick = async () => {
     showToast('Đang tải dữ liệu...');
     currentUserDocId = "guest_" + tempUserName.toLowerCase().replace(/\s+/g, '_');
-    
-    // Lưu ID khách vào trình duyệt để lần sau tự vào
     localStorage.setItem('saved_guest_id', currentUserDocId);
-    
     await fetchUserData('guest');
   };
 
-  // XỬ LÝ NÚT GOOGLE
   document.getElementById('btnGoogleLogin').onclick = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       currentUserDocId = "google_" + result.user.uid;
       showToast('Đang đồng bộ dữ liệu Google...');
       await fetchUserData('google');
-    } catch (error) {
-      console.error(error);
-      showToast('Đăng nhập Google thất bại!');
-    }
+    } catch (error) { showToast('Đăng nhập Google thất bại!'); }
   };
 
-  // NÚT ĐĂNG XUẤT MỚI
   document.getElementById('btnLogout').onclick = async () => {
-    // Nếu đang là Google thì đăng xuất Google
-    if (currentUserDocId && currentUserDocId.startsWith('google_')) {
-      await signOut(auth);
-    }
-    // Xóa nhớ dữ liệu Khách trong trình duyệt
-    localStorage.removeItem('saved_guest_id');
-    // Tải lại trang web về lúc ban đầu
-    location.reload();
+    if (currentUserDocId && currentUserDocId.startsWith('google_')) await signOut(auth);
+    localStorage.removeItem('saved_guest_id'); location.reload();
   };
 
-
-  // --- LOGIC SỰ KIỆN HỌC TẬP ---
-
+  // --- LOGIC HỌC TẬP CHÍNH ---
   document.getElementById('btnCheckin').onclick = () => {
     const today = new Date().toDateString();
     if(state.lastCheckin === today) return showToast('Hôm nay điểm danh rồi nha!');
-    
-    let oldXp = state.xp;
-    state.lastCheckin = today; state.streak++; state.xp += 10;
-    showToast('Điểm danh thành công! +10 EXP'); 
-    checkLevelUp(oldXp, state.xp); 
-    save();
+    let oldXp = state.xp; state.lastCheckin = today; state.streak++; state.xp += 10;
+    showToast('Điểm danh thành công! +10 EXP'); checkLevelUp(oldXp, state.xp); save();
   };
 
   document.getElementById('btnStartTest').onclick = () => {
     const w = state.words.find(x => x.id === state.queue[0]);
     testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
-
     if (testDirection === 'en-vi') {
       document.getElementById('focusWord').innerText = w.w;
       document.getElementById('focusMeaning').innerText = '...';
@@ -574,7 +592,6 @@
       document.getElementById('focusMeaning').innerText = w.m;
       document.getElementById('focusInput').placeholder = 'Gõ từ tiếng Anh...';
     }
-    
     document.getElementById('secretHint').style.display = 'none'; 
     document.getElementById('focusInput').value = '';
     document.getElementById('focusInput').style.display = 'block';
@@ -585,17 +602,14 @@
 
   document.getElementById('btnGiveUp').onclick = () => {
     state.xp = Math.max(0, state.xp - 20); 
-    showToast('Không sao, học lại nhé! -20 EXP');
-    save(); loadWord(); 
+    showToast('Không sao, học lại nhé! -20 EXP'); save(); loadWord(); 
   };
 
   document.getElementById('btnCheck').onclick = () => {
     const w = state.words.find(x => x.id === state.queue[0]);
     let input = document.getElementById('focusInput').value.trim().toLowerCase();
     let target = testDirection === 'en-vi' ? w.m.toLowerCase() : w.w.toLowerCase();
-
-    if(input === target) markCorrect();
-    else showToast('Sai mất rồi, thử lại nhé!');
+    if(input === target) markCorrect(); else showToast('Sai mất rồi, thử lại nhé!');
   };
 
   document.getElementById('focusInput').addEventListener('keypress', function (e) {
@@ -603,21 +617,161 @@
   });
 
 
-  // --- TỰ ĐỘNG KIỂM TRA ĐĂNG NHẬP KHI MỞ WEB ---
-  const savedGuestId = localStorage.getItem('saved_guest_id');
 
+  let reviewQueue = [];
+  let currentRevIdx = 0;
+  let revFails = 0;
+  let revMode = 0; 
+  let currentRevWord = null;
+
+  document.getElementById('btnReview').onclick = () => {
+  
+    let learned = state.words.filter(w => w.step > 0);
+    if(learned.length < 3) return showToast("Học đúng thêm 3 từ nữa mới được ôn bài nha!");
+    
+
+    reviewQueue = learned.sort(() => 0.5 - Math.random()).slice(0, 3);
+    currentRevIdx = 0;
+    
+    document.getElementById('reviewModal').style.display = 'flex';
+    loadReviewWord();
+  };
+
+  function loadReviewWord() {
+    if (currentRevIdx >= 3) {
+      document.getElementById('reviewModal').style.display = 'none';
+      showToast("Ôn bài xong! Quá giỏi +15 EXP");
+      let oldXp = state.xp;
+      state.xp += 15; 
+      checkLevelUp(oldXp, state.xp);
+      save();
+      return;
+    }
+
+    currentRevWord = reviewQueue[currentRevIdx];
+    revFails = 0; 
+    document.getElementById('revProgress').innerText = currentRevIdx + 1;
+    
+ 
+    const inputEn = document.getElementById('revInputEn');
+    const inputVi = document.getElementById('revInputVi');
+    inputEn.style.display = 'none'; inputVi.style.display = 'none';
+    inputEn.value = ''; inputVi.value = '';
+    document.getElementById('revHardModeTip').style.display = 'none';
+
+    if (currentRevWord.step >= 3 && Math.random() > 0.5) {
+      revMode = 2; // Hard mode
+      document.getElementById('revWordDisplay').innerText = "❓❓❓";
+      document.getElementById('revHardModeTip').style.display = 'block';
+      inputEn.style.display = 'block';
+      inputVi.style.display = 'block';
+      inputEn.focus();
+    } else {
+     
+      revMode = Math.random() > 0.5 ? 0 : 1;
+      if (revMode === 0) {
+        document.getElementById('revWordDisplay').innerText = currentRevWord.w;
+        inputVi.style.display = 'block';
+        inputVi.focus();
+      } else { 
+        document.getElementById('revWordDisplay').innerText = currentRevWord.m;
+        inputEn.style.display = 'block';
+        inputEn.focus();
+      }
+    }
+  }
+
+  window.playReviewAudio = function() {
+    if (!currentRevWord) return;
+    if ('speechSynthesis' in window) {
+      let u = new SpeechSynthesisUtterance(currentRevWord.w);
+      u.lang = 'en-US'; window.speechSynthesis.speak(u);
+    }
+  };
+
+  document.getElementById('btnCancelReview').onclick = () => {
+    document.getElementById('reviewModal').style.display = 'none';
+  };
+
+  document.getElementById('btnCheckReview').onclick = () => {
+    let enAns = document.getElementById('revInputEn').value.trim().toLowerCase();
+    let viAns = document.getElementById('revInputVi').value.trim().toLowerCase();
+    
+    let isCorrect = false;
+    if (revMode === 0) {
+      isCorrect = (viAns === currentRevWord.m.toLowerCase());
+    } else if (revMode === 1) {
+      isCorrect = (enAns === currentRevWord.w.toLowerCase());
+    } else { 
+      isCorrect = (enAns === currentRevWord.w.toLowerCase() && viAns === currentRevWord.m.toLowerCase());
+    }
+
+    if (isCorrect) {
+      showToast("Chính xác! +5 EXP");
+      let oldXp = state.xp;
+      state.xp += 5;
+      checkLevelUp(oldXp, state.xp);
+      save(); 
+      currentRevIdx++;
+      loadReviewWord();
+    } else {
+      revFails++;
+ 
+      state.xp = Math.max(0, state.xp - 5); 
+      save(); 
+      if (state.isCrush && revFails >= 3) {
+        document.getElementById('reviewModal').style.display = 'none';
+        
+        let punishMessages = [
+          `Quên bài rồi kìa cô nương! Từ "${currentRevWord.w}" nghĩa là "${currentRevWord.m}" nha. Đã thế mìn cho vào danh sách học lại từ đầu luôn!`,
+          `Học trước quên sau là giỏi! Dám sai "${currentRevWord.w}" (${currentRevWord.m}) tới 3 lần. Phạt học lại từ này nhé!`,
+          `Cái đầu nhỏ này nạp nhiều thứ quá nên rớt chữ phải không? "${currentRevWord.w}" là "${currentRevWord.m}". Đá về hàng chưa học ngay!`
+        ];
+        document.getElementById('punishMsg').innerText = punishMessages[Math.floor(Math.random()*punishMessages.length)];
+        document.getElementById('punishModal').style.display = 'flex';
+        
+ 
+        let realWord = state.words.find(x => x.id === currentRevWord.id);
+        if (realWord) {
+          realWord.step = 0;
+          realWord.nextTs = 0;
+         
+          if(!state.queue.includes(realWord.id)) {
+            state.queue.unshift(realWord.id);
+          }
+        }
+        save();
+      } else {
+        showToast("Sai rồi nha! Bị trừ 5 EXP kìa, ráng nhớ lại xem!");
+      }
+    }
+  };
+
+
+  window.closePunishAndNext = function() {
+    document.getElementById('punishModal').style.display = 'none';
+    document.getElementById('reviewModal').style.display = 'flex';
+    currentRevIdx++; 
+    loadReviewWord();
+  };
+
+
+  document.getElementById('revInputEn').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') document.getElementById('btnCheckReview').click();
+  });
+  document.getElementById('revInputVi').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') document.getElementById('btnCheckReview').click();
+  });
+
+
+  const savedGuestId = localStorage.getItem('saved_guest_id');
   if (savedGuestId) {
-    // Nếu trước đó đã đăng nhập bằng Khách
-    currentUserDocId = savedGuestId;
-    fetchUserData('guest');
+    currentUserDocId = savedGuestId; fetchUserData('guest');
   } else {
-    // Chờ Firebase kiểm tra xem trước đó có đang nhập bằng Google không
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        currentUserDocId = "google_" + user.uid;
-        await fetchUserData('google');
+        currentUserDocId = "google_" + user.uid; await fetchUserData('google');
       } else {
-        // Không có tài khoản nào được lưu, hiện khung đăng nhập
         document.getElementById('loginScreen').style.display = 'flex';
       }
     });
