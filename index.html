@@ -85,7 +85,6 @@
       color: white; text-align: center; outline: none; margin-bottom: 20px;
     }
 
-    /* Tối ưu riêng cho các dòng màn hình điện thoại */
     @media(max-width: 800px) { 
       .app { grid-template-columns: 1fr; } 
     }
@@ -100,11 +99,29 @@
 <body>
 
   <div class="modal" id="loginScreen">
-    <div class="modal-box">
+    <div class="modal-box" id="step1Name">
       <h2 style="color: var(--accent2); margin-bottom: 10px;">Chào mừng bạn</h2>
       <p style="color: #ccc; margin-bottom: 25px;">Vui lòng nhập tên để bắt đầu học</p>
       <input type="text" id="loginInput" placeholder="Tên của bạn là gì?" autocomplete="off">
-      <button class="btn primary" id="btnLogin" style="width: 100%;">Bắt đầu ngay</button>
+      <button class="btn primary" id="btnNextStep" style="width: 100%;">Tiếp theo</button>
+    </div>
+
+    <div class="modal-box" id="step2Method" style="display: none;">
+      <h2 style="color: var(--accent2); margin-bottom: 10px;">Xác nhận</h2>
+      <p style="color: #ccc; margin-bottom: 25px;">Chào <strong id="displayName" style="color: #fff;"></strong>, chọn cách đăng nhập nhé!</p>
+      
+      <button class="btn" id="btnGoogleLogin" style="width: 100%; margin-bottom: 15px; background: #fff; color: #333; justify-content: center; gap: 10px;">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Đăng nhập Google
+      </button>
+      
+      <button class="btn primary" id="btnGuestLogin" style="width: 100%;">Tiếp tục với tư cách Khách</button>
+      <button class="btn" id="btnBackStep" style="width: 100%; margin-top: 15px; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Quay lại</button>
     </div>
   </div>
 
@@ -166,363 +183,413 @@
     </div>
   </div>
 
-<script>
-// Mốc cấp độ: mỗi cấp cách nhau 100đ
-const TITLES = [
-  { reqXp: 0, name: "Người lạ ơi", msg: "Bắt đầu hành trình nhé!" },
-  { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },
-  { reqXp: 200, name: "Thiên thần tháng 3", msg: "Tuổi mới luôn vui vẻ và học giỏi tiếng Anh nha!" },
-  { reqXp: 300, name: "Ngoại lệ của anh", msg: "Học tiếng Anh có thể khó, nhưng có anh ở đây rồi!" },
-  { reqXp: 400, name: "Nóc nhà tương lai", msg: "Giỏi quá! Pass điện thoại em giữ hết!" }
-];
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
-const SECRET_HINTS = [
-  "Hint: Người làm ra web này rất thích nụ cười của cou.",
-  "Hint: Học mệt thì nghỉ ngơi, đừng ép bản thân quá nhé.",
-  "Hint: 10.000 từ vựng cũng không diễn tả hết độ đáng yêu của cou.",
-  "Hint: Cô gái tháng 3 lúc nào cũng tuyệt vời nhất.",
-  "Hint: Cou cứ mạnh dạn gõ đáp án, sai thì để mình trừ điểm, không sao cả.",
-  "Hint: Cố lên nhé, mình luôn ủng hộ cou!"
-];
+  // Cấu hình Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEyyfIjheNTY3O7klH7tkpGKXEXm2ku4I",
+    authDomain: "dangnhap-5069e.firebaseapp.com",
+    projectId: "dangnhap-5069e",
+    storageBucket: "dangnhap-5069e.firebasestorage.app",
+    messagingSenderId: "596384133171",
+    appId: "1:596384133171:web:4ab1b9b3bb37d0720c3346",
+    measurementId: "G-HDMQ6PJ1BN"
+  };
 
-const RAW_VOCAB = [
-  // --- CÁC TỪ CŨ CỦA BẠN ---
-  "Accept|Chấp nhận","Accident|Tai nạn","Achieve|Đạt được","Admire|Ngưỡng mộ","Adventure|Cuộc phiêu lưu",
-  "Brilliant|Xuất sắc","Balance|Cân bằng","Benefit|Lợi ích","Brave|Dũng cảm","Breathe|Hít thở",
-  "Calculate|Tính toán","Challenge|Thử thách","Character|Tính cách","Comfort|Sự thoải mái","Courage|Sự can đảm",
-  "Dangerous|Nguy hiểm","Decision|Quyết định","Develop|Phát triển","Discover|Khám phá","Distance|Khoảng cách",
-  "Education|Giáo dục","Effort|Nỗ lực","Encourage|Động viên","Energy|Năng lượng","Environment|Môi trường",
-  "Familiar|Quen thuộc","Focus|Tập trung","Forgive|Tha thứ","Frequent|Thường xuyên","Future|Tương lai",
-  "Generate|Tạo ra","Genuine|Thành thật","Glorious|Vẻ vang","Grateful|Biết ơn","Guarantee|Đảm bảo",
-  "Habit|Thói quen","Happiness|Hạnh phúc","Health|Sức khỏe","Honest|Trung thực","Hope|Hy vọng",
-  "Identify|Xác định","Imagine|Tưởng tượng","Improve|Cải thiện","Include|Bao gồm","Independent|Độc lập",
-  "Journey|Hành trình","Judge|Đánh giá","Justice|Công lý","Knowledge|Kiến thức","Language|Ngôn ngữ",
-  "Manage|Quản lý","Measure|Đo lường","Memory|Trí nhớ","Method|Phương pháp","Miracle|Phép màu",
-  "Natural|Tự nhiên","Necessary|Cần thiết","Nervous|Lo lắng","Notice|Chú ý","Nurture|Nuôi dưỡng",
-  "Object|Vật thể","Observe|Quan sát","Obvious|Rõ ràng","Occur|Xảy ra","Opportunity|Cơ hội",
-  "Patience|Kiên nhẫn","Perfect|Hoàn hảo","Persuade|Thuyết phục","Practice|Thực hành","Protect|Bảo vệ",
-  "Quality|Chất lượng","Question|Câu hỏi","Quick|Nhanh chóng","Quiet|Yên tĩnh","Quote|Trích dẫn",
-  "Realize|Nhận ra","Receive|Nhận","Recognize|Công nhận","Reflect|Phản chiếu","Respect|Tôn trọng",
-  "Satisfy|Làm hài lòng","Secret|Bí mật","Sensitive|Nhạy cảm","Serious|Nghiêm túc","Skill|Kỹ năng",
-  "Talent|Tài năng","Target|Mục tiêu","Theory|Lý thuyết","Thought|Suy nghĩ","Trust|Tin tưởng",
-  "Understand|Hiểu","Unique|Độc đáo","Useful|Hữu ích","Value|Giá trị","Vision|Tầm nhìn",
-  "Warning|Cảnh báo","Wealth|Sự giàu có","Wisdom|Sự khôn ngoan","Wonder|Tự hỏi","Worthy|Xứng đáng",
-  "Adorable|Đáng yêu","Destiny|Định mệnh","Cherish|Trân trọng","Gorgeous|Tuyệt đẹp","Joyful|Vui vẻ","Ethereal|Thanh tao",
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
 
-  // --- ĐỘNG TỪ THƯỜNG NGÀY ---
-  "Abandon|Từ bỏ","Abolish|Hủy bỏ","Absorb|Hấp thụ","Accommodate|Cung cấp chỗ ở","Accompany|Đồng hành",
-  "Accumulate|Tích lũy","Accuse|Buộc tội","Acknowledge|Công nhận","Acquire|Thu được","Adapt|Thích nghi",
-  "Address|Giải quyết (vấn đề)","Adjust|Điều chỉnh","Administer|Quản lý","Admit|Thừa nhận","Adopt|Nhận nuôi",
-  "Advance|Tiến lên","Advise|Khuyên bảo","Affect|Ảnh hưởng","Afford|Có đủ khả năng","Agree|Đồng ý",
-  "Allow|Cho phép","Alter|Thay đổi","Analyze|Phân tích","Announce|Thông báo","Anticipate|Dự đoán",
-  "Apologize|Xin lỗi","Appeal|Kêu gọi","Appear|Xuất hiện","Apply|Áp dụng/Ứng tuyển","Appoint|Bổ nhiệm",
-  "Appreciate|Trân trọng","Approach|Tiếp cận","Approve|Tán thành","Argue|Tranh luận","Arise|Phát sinh",
-  "Arrange|Sắp xếp","Arrive|Đến nơi","Ask|Hỏi","Assess|Đánh giá","Assign|Phân công",
-  "Assist|Hỗ trợ","Assume|Giả định","Assure|Đảm bảo","Attach|Đính kèm","Attack|Tấn công",
-  "Attempt|Cố gắng","Attend|Tham gia","Attract|Thu hút","Avoid|Tránh xa","Awake|Thức giấc",
+  const TITLES = [
+    { reqXp: 0, name: "Người lạ ơi", msg: "Bắt đầu hành trình nhé!" },
+    { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },
+    { reqXp: 200, name: "Thiên thần tháng 3", msg: "Tuổi mới luôn vui vẻ và học giỏi tiếng Anh nha!" },
+    { reqXp: 300, name: "Ngoại lệ của anh", msg: "Học tiếng Anh có thể khó, nhưng có anh ở đây rồi!" },
+    { reqXp: 400, name: "Nóc nhà tương lai", msg: "Giỏi quá! Pass điện thoại em giữ hết!" }
+  ];
 
-  // --- DANH TỪ TRỪU TƯỢNG & KHÁI NIỆM ---
-  "Ability|Khả năng","Absence|Sự vắng mặt","Access|Quyền truy cập","Account|Tài khoản","Achievement|Thành tựu",
-  "Action|Hành động","Activity|Hoạt động","Addition|Sự thêm vào","Advantage|Lợi thế","Agreement|Hiệp ước/Sự đồng ý",
-  "Amount|Số lượng","Analysis|Sự phân tích","Answer|Câu trả lời","Appearance|Ngoại hình","Application|Ứng dụng/Đơn xin",
-  "Argument|Sự tranh cãi","Arrangement|Sự sắp xếp","Article|Bài báo","Aspect|Khía cạnh","Assignment|Nhiệm vụ",
-  "Assistance|Sự giúp đỡ","Association|Sự liên kết/Hiệp hội","Assumption|Giả định","Atmosphere|Bầu không khí","Attention|Sự chú ý",
-  "Attitude|Thái độ","Audience|Khán giả","Authority|Thẩm quyền","Awareness|Sự nhận thức","Background|Bối cảnh/Nền tảng",
-  "Basis|Cơ sở","Beauty|Vẻ đẹp","Beginning|Sự khởi đầu","Behavior|Hành vi","Belief|Niềm tin",
-  "Boundary|Ranh giới","Business|Kinh doanh","Capacity|Dung tích/Sức chứa","Category|Hạng mục","Cause|Nguyên nhân",
-  "Celebration|Lễ kỷ niệm","Center|Trung tâm","Century|Thế kỷ","Certainty|Sự chắc chắn","Chance|Cơ hội (may rủi)",
-  "Change|Sự thay đổi","Chapter|Chương sách","Communicate|Giao tiếp","Community|Cộng đồng","Company|Công ty",
+  const SECRET_HINTS = [
+    "Hint: Người làm ra web này rất thích nụ cười của em.",
+    "Hint: Học mệt thì nghỉ ngơi, đừng ép bản thân quá nhé.",
+    "Hint: 10.000 từ vựng cũng không diễn tả hết độ đáng yêu của em.",
+    "Hint: Cô gái tháng 3 lúc nào cũng tuyệt vời nhất.",
+    "Hint: Em cứ mạnh dạn gõ đáp án, sai thì để anh trừ điểm, không sao cả.",
+    "Hint: Cố lên nhé, anh luôn ủng hộ em!"
+  ];
 
-  // --- TÍNH TỪ THÔNG DỤNG ---
-  "Absolute|Tuyệt đối","Academic|Thuộc học thuật","Acceptable|Có thể chấp nhận","Accurate|Chính xác","Active|Năng động",
-  "Actual|Thực sự","Additional|Bổ sung","Adequate|Đầy đủ","Administrative|Thuộc hành chính","Appropriate|Phù hợp",
-  "Approximate|Xấp xỉ","Automatic|Tự động","Available|Có sẵn","Aware|Có ý thức","Basic|Cơ bản",
-  "Beautiful|Xinh đẹp","Beneficial|Có ích","Blind|Mù quáng/Mù","Bold|Táo bạo","Brief|Ngắn gọn",
-  "Bright|Tươi sáng","Broad|Rộng lớn","Broken|Vỡ/Hỏng","Busy|Bận rộn","Calm|Bình tĩnh",
-  "Capable|Có năng lực","Careful|Cẩn thận","Casual|Bình thường/Thoải mái","Central|Trọng tâm","Certain|Chắc chắn",
-  "Cheap|Rẻ","Chemical|Thuộc hóa học","Chief|Chủ yếu/Trưởng","Civil|Thuộc dân sự","Classic|Kinh điển",
-  "Clean|Sạch sẽ","Clear|Rõ ràng","Clever|Thông minh/Khéo léo","Clinical|Thuộc lâm sàng","Close|Gần gũi",
-  "Cold|Lạnh lẽo","Colorful|Nhiều màu sắc","Comfortable|Thoải mái","Common|Phổ biến","Complex|Phức tạp",
-  "Complicated|Rắc rối","Comprehensive|Toàn diện","Confident|Tự tin","Constant|Kiên định/Liên tục","Crucial|Quan trọng",
+  const RAW_VOCAB = [
+    "Accept|Chấp nhận","Accident|Tai nạn","Achieve|Đạt được","Admire|Ngưỡng mộ","Adventure|Cuộc phiêu lưu",
+    "Brilliant|Xuất sắc","Balance|Cân bằng","Benefit|Lợi ích","Brave|Dũng cảm","Breathe|Hít thở",
+    "Calculate|Tính toán","Challenge|Thử thách","Character|Tính cách","Comfort|Sự thoải mái","Courage|Sự can đảm",
+    "Dangerous|Nguy hiểm","Decision|Quyết định","Develop|Phát triển","Discover|Khám phá","Distance|Khoảng cách",
+    "Education|Giáo dục","Effort|Nỗ lực","Encourage|Động viên","Energy|Năng lượng","Environment|Môi trường",
+    "Familiar|Quen thuộc","Focus|Tập trung","Forgive|Tha thứ","Frequent|Thường xuyên","Future|Tương lai",
+    "Generate|Tạo ra","Genuine|Thành thật","Glorious|Vẻ vang","Grateful|Biết ơn","Guarantee|Đảm bảo",
+    "Habit|Thói quen","Happiness|Hạnh phúc","Health|Sức khỏe","Honest|Trung thực","Hope|Hy vọng",
+    "Identify|Xác định","Imagine|Tưởng tượng","Improve|Cải thiện","Include|Bao gồm","Independent|Độc lập",
+    "Journey|Hành trình","Judge|Đánh giá","Justice|Công lý","Knowledge|Kiến thức","Language|Ngôn ngữ",
+    "Manage|Quản lý","Measure|Đo lường","Memory|Trí nhớ","Method|Phương pháp","Miracle|Phép màu",
+    "Natural|Tự nhiên","Necessary|Cần thiết","Nervous|Lo lắng","Notice|Chú ý","Nurture|Nuôi dưỡng",
+    "Object|Vật thể","Observe|Quan sát","Obvious|Rõ ràng","Occur|Xảy ra","Opportunity|Cơ hội",
+    "Patience|Kiên nhẫn","Perfect|Hoàn hảo","Persuade|Thuyết phục","Practice|Thực hành","Protect|Bảo vệ",
+    "Quality|Chất lượng","Question|Câu hỏi","Quick|Nhanh chóng","Quiet|Yên tĩnh","Quote|Trích dẫn",
+    "Realize|Nhận ra","Receive|Nhận","Recognize|Công nhận","Reflect|Phản chiếu","Respect|Tôn trọng",
+    "Satisfy|Làm hài lòng","Secret|Bí mật","Sensitive|Nhạy cảm","Serious|Nghiêm túc","Skill|Kỹ năng",
+    "Talent|Tài năng","Target|Mục tiêu","Theory|Lý thuyết","Thought|Suy nghĩ","Trust|Tin tưởng",
+    "Understand|Hiểu","Unique|Độc đáo","Useful|Hữu ích","Value|Giá trị","Vision|Tầm nhìn",
+    "Warning|Cảnh báo","Wealth|Sự giàu có","Wisdom|Sự khôn ngoan","Wonder|Tự hỏi","Worthy|Xứng đáng",
+    "Adorable|Đáng yêu","Destiny|Định mệnh","Cherish|Trân trọng","Gorgeous|Tuyệt đẹp","Joyful|Vui vẻ","Ethereal|Thanh tao",
+    "Abandon|Từ bỏ","Abolish|Hủy bỏ","Absorb|Hấp thụ","Accommodate|Cung cấp chỗ ở","Accompany|Đồng hành",
+    "Accumulate|Tích lũy","Accuse|Buộc tội","Acknowledge|Công nhận","Acquire|Thu được","Adapt|Thích nghi",
+    "Address|Giải quyết (vấn đề)","Adjust|Điều chỉnh","Administer|Quản lý","Admit|Thừa nhận","Adopt|Nhận nuôi",
+    "Advance|Tiến lên","Advise|Khuyên bảo","Affect|Ảnh hưởng","Afford|Có đủ khả năng","Agree|Đồng ý",
+    "Allow|Cho phép","Alter|Thay đổi","Analyze|Phân tích","Announce|Thông báo","Anticipate|Dự đoán",
+    "Apologize|Xin lỗi","Appeal|Kêu gọi","Appear|Xuất hiện","Apply|Áp dụng/Ứng tuyển","Appoint|Bổ nhiệm",
+    "Appreciate|Trân trọng","Approach|Tiếp cận","Approve|Tán thành","Argue|Tranh luận","Arise|Phát sinh",
+    "Arrange|Sắp xếp","Arrive|Đến nơi","Ask|Hỏi","Assess|Đánh giá","Assign|Phân công",
+    "Assist|Hỗ trợ","Assume|Giả định","Assure|Đảm bảo","Attach|Đính kèm","Attack|Tấn công",
+    "Attempt|Cố gắng","Attend|Tham gia","Attract|Thu hút","Avoid|Tránh xa","Awake|Thức giấc",
+    "Ability|Khả năng","Absence|Sự vắng mặt","Access|Quyền truy cập","Account|Tài khoản","Achievement|Thành tựu",
+    "Action|Hành động","Activity|Hoạt động","Addition|Sự thêm vào","Advantage|Lợi thế","Agreement|Hiệp ước/Sự đồng ý",
+    "Amount|Số lượng","Analysis|Sự phân tích","Answer|Câu trả lời","Appearance|Ngoại hình","Application|Ứng dụng/Đơn xin",
+    "Argument|Sự tranh cãi","Arrangement|Sự sắp xếp","Article|Bài báo","Aspect|Khía cạnh","Assignment|Nhiệm vụ",
+    "Assistance|Sự giúp đỡ","Association|Sự liên kết/Hiệp hội","Assumption|Giả định","Atmosphere|Bầu không khí","Attention|Sự chú ý",
+    "Attitude|Thái độ","Audience|Khán giả","Authority|Thẩm quyền","Awareness|Sự nhận thức","Background|Bối cảnh/Nền tảng",
+    "Basis|Cơ sở","Beauty|Vẻ đẹp","Beginning|Sự khởi đầu","Behavior|Hành vi","Belief|Niềm tin",
+    "Boundary|Ranh giới","Business|Kinh doanh","Capacity|Dung tích/Sức chứa","Category|Hạng mục","Cause|Nguyên nhân",
+    "Celebration|Lễ kỷ niệm","Center|Trung tâm","Century|Thế kỷ","Certainty|Sự chắc chắn","Chance|Cơ hội (may rủi)",
+    "Change|Sự thay đổi","Chapter|Chương sách","Communicate|Giao tiếp","Community|Cộng đồng","Company|Công ty",
+    "Absolute|Tuyệt đối","Academic|Thuộc học thuật","Acceptable|Có thể chấp nhận","Accurate|Chính xác","Active|Năng động",
+    "Actual|Thực sự","Additional|Bổ sung","Adequate|Đầy đủ","Administrative|Thuộc hành chính","Appropriate|Phù hợp",
+    "Approximate|Xấp xỉ","Automatic|Tự động","Available|Có sẵn","Aware|Có ý thức","Basic|Cơ bản",
+    "Beautiful|Xinh đẹp","Beneficial|Có ích","Blind|Mù quáng/Mù","Bold|Táo bạo","Brief|Ngắn gọn",
+    "Bright|Tươi sáng","Broad|Rộng lớn","Broken|Vỡ/Hỏng","Busy|Bận rộn","Calm|Bình tĩnh",
+    "Capable|Có năng lực","Careful|Cẩn thận","Casual|Bình thường/Thoải mái","Central|Trọng tâm","Certain|Chắc chắn",
+    "Cheap|Rẻ","Chemical|Thuộc hóa học","Chief|Chủ yếu/Trưởng","Civil|Thuộc dân sự","Classic|Kinh điển",
+    "Clean|Sạch sẽ","Clear|Rõ ràng","Clever|Thông minh/Khéo léo","Clinical|Thuộc lâm sàng","Close|Gần gũi",
+    "Cold|Lạnh lẽo","Colorful|Nhiều màu sắc","Comfortable|Thoải mái","Common|Phổ biến","Complex|Phức tạp",
+    "Complicated|Rắc rối","Comprehensive|Toàn diện","Confident|Tự tin","Constant|Kiên định/Liên tục","Crucial|Quan trọng",
+    "Computer|Máy tính","Screen|Màn hình","Keyboard|Bàn phím","Mouse|Chuột (máy tính)","Internet|Mạng internet",
+    "Website|Trang web","Software|Phần mềm","Hardware|Phần cứng","Network|Mạng lưới","Data|Dữ liệu",
+    "Information|Thông tin","Document|Tài liệu","Folder|Thư mục","Project|Dự án","Meeting|Cuộc họp",
+    "Office|Văn phòng","Manager|Người quản lý","Employee|Nhân viên","Colleague|Đồng nghiệp","Client|Khách hàng (dịch vụ)",
+    "Customer|Khách hàng (mua bán)","Product|Sản phẩm","Service|Dịch vụ","Market|Thị trường","Price|Giá cả",
+    "Cost|Chi phí","Profit|Lợi nhuận","Investment|Sự đầu tư","Strategy|Chiến lược","Plan|Kế hoạch",
+    "Goal|Mục tiêu (ngắn hạn)","Objective|Mục tiêu (dài hạn)","Success|Sự thành công","Failure|Sự thất bại","Report|Bản báo cáo",
+    "Presentation|Bài thuyết trình","Experience|Kinh nghiệm","Resume|Sơ yếu lý lịch","Interview|Phỏng vấn","Career|Sự nghiệp",
+    "Profession|Nghề nghiệp","Industry|Ngành công nghiệp","Organization|Tổ chức","Department|Phòng ban","Team|Đội/Nhóm",
+    "Leader|Người lãnh đạo","Boss|Ông chủ","Meeting|Cuộc họp","Schedule|Lịch trình","Deadline|Hạn chót",
+    "Angry|Tức giận","Anxious|Loâu","Bored|Chán nản","Cheerful|Vui tươi","Confused|Bối rối",
+    "Curious|Tò mò","Depressed|Trầm cảm/Tuyệt vọng","Disappointed|Thất vọng","Eager|Háo hức","Embarrassed|Xấu hổ",
+    "Excited|Phấn khích","Exhausted|Kiệt sức","Fascinated|Bị lôi cuốn","Frustrated|Bực bội","Glad|Vui lòng",
+    "Guilty|Có tội/Tội lỗi","Happy|Vui vẻ","Hopeful|Đầy hy vọng","Hostile|Thù địch","Hurt|Tổn thương",
+    "Innocent|Ngây thơ/Vô tội","Jealous|Ghen tỵ","Lonely|Cô đơn","Mad|Phát điên/Tức giận","Numb|Tê liệt/Vô cảm",
+    "Overwhelmed|Bị choáng ngợp","Peaceful|Bình yên","Pleased|Hài lòng","Proud|Tự hào","Relieved|Nhẹ nhõm",
+    "Sad|Buồn bã","Satisfied|Thỏa mãn","Scared|Sợ hãi","Shocked|Sốc","Shy|Nhút nhát",
+    "Sorry|Hối tiếc/Xin lỗi","Surprised|Ngạc nhiên","Tense|Căng thẳng","Terrified|Khiếp sợ","Thrilled|Vui sướng/Hồi hộp",
+    "Tired|Mệt mỏi","Upset|Buồn phiền","Worried|Lo lắng","Affectionate|Trìu mến","Amused|Thích thú",
+    "Animal|Động vật","Bird|Chim","Tree|Cây cối","Flower|Bông hoa","River|Dòng sông",
+    "Mountain|Ngọn núi","Ocean|Đại dương","Sea|Biển","Rain|Cơn mưa","Wind|Cơn gió",
+    "Snow|Tuyết","Cloud|Đám mây","Sky|Bầu trời","Star|Ngôi sao","Morning|Buổi sáng",
+    "Afternoon|Buổi chiều","Evening|Buổi tối","Night|Ban đêm","Week|Tuần","Month|Tháng",
+    "Year|Năm","Today|Hôm nay","Tomorrow|Ngày mai","Yesterday|Hôm qua","Always|Luôn luôn",
+    "Never|Không bao giờ","Often|Thường xuyên","Sometimes|Đôi khi","Rarely|Hiếm khi","Usually|Thông thường",
+    "Early|Sớm","Late|Muộn","Soon|Sớm thôi","Once|Một lần","Twice|Hai lần",
+    "Again|Lần nữa","Before|Trước khi","After|Sau khi","During|Trong suốt","While|Trong khi",
+    "Bread|Bánh mì","Butter|Bơ","Cheese|Phô mai","Chicken|Thịt gà","Coffee|Cà phê",
+    "Dinner|Bữa tối","Fruit|Trái cây","Garlic|Tỏi","Honey|Mật ong","Juice|Nước ép",
+    "Kitchen|Nhà bếp","Lemon|Quả chanh","Meat|Thịt","Milk|Sữa","Onion|Hành tây",
+    "Orange|Quả cam","Pepper|Hạt tiêu","Potato|Khoai tây","Recipe|Công thức nấu ăn","Rice|Gạo/Cơm",
+    "Salad|Rau trộn","Salt|Muối","Sandwich|Bánh mì kẹp","Sauce|Nước sốt","Soup|Món súp",
+    "Sugar|Đường (ăn)","Sweet|Ngọt ngào/Kẹo","Tomato|Cà chua","Vegetable|Rau củ","Water|Nước",
+    "Window|Cửa sổ","Door|Cửa ra vào","Table|Cái bàn","Chair|Cái ghế","Bed|Cái giường",
+    "Affection|Sự yêu thương","Allure|Sức quyến rũ","Angelic|Tựa thiên thần","Beloved|Người yêu dấu","Blossom|Nở rộ",
+    "Captivate|Làm say đắm","Charm|Sự duyên dáng","Companion|Người đồng hành","Cuddle|Ôm ấp","Darling|Người thương",
+    "Dazzling|Sáng chói/Lộng lẫy","Devotion|Sự tận tâm","Embrace|Cái ôm","Enchant|Bỏ bùa mê","Endear|Làm cho được yêu mến",
+    "Eternity|Sự vĩnh cửu","Fancy|Say mê/Thích","Flirt|Tán tỉnh","Fondness|Sự yêu mến","Gentle|Dịu dàng",
+    "Heartthrob|Người trong mộng","Infatuate|Làm đắm say","Intimate|Thân mật","Kiss|Nụ hôn","Lovable|Đáng yêu",
+    "Lullaby|Khúc hát ru","Magic|Phép màu/Kỳ diệu","Melody|Giai điệu","Muse|Nàng thơ","Passion|Niềm đam mê",
+    "Precious|Quý giá","Promise|Lời hứa","Radiant|Rạng rỡ","Romance|Sự lãng mạn","Rose|Hoa hồng",
+    "Serenade|Bản tình ca","Soulmate|Bạn tâm giao","Sparkle|Lấp lánh","Stunning|Đẹp sững sờ","Sweetheart|Người yêu",
+    "Tender|Mềm mại/Dịu dàng","Treasure|Kho báu/Trân quý","Valentine|Người tình","Whisper|Lời thì thầm","Wonderful|Tuyệt vời",
+    "Yearn|Khao khát","Zeal|Sự nhiệt huyết","Mesmerize|Mê hoặc","Breathtaking|Đẹp ngộp thở","Forever|Mãi mãi"
+  ];
 
-  // --- CÔNG VIỆC, HỌC TẬP & CÔNG NGHỆ ---
-  "Computer|Máy tính","Screen|Màn hình","Keyboard|Bàn phím","Mouse|Chuột (máy tính)","Internet|Mạng internet",
-  "Website|Trang web","Software|Phần mềm","Hardware|Phần cứng","Network|Mạng lưới","Data|Dữ liệu",
-  "Information|Thông tin","Document|Tài liệu","Folder|Thư mục","Project|Dự án","Meeting|Cuộc họp",
-  "Office|Văn phòng","Manager|Người quản lý","Employee|Nhân viên","Colleague|Đồng nghiệp","Client|Khách hàng (dịch vụ)",
-  "Customer|Khách hàng (mua bán)","Product|Sản phẩm","Service|Dịch vụ","Market|Thị trường","Price|Giá cả",
-  "Cost|Chi phí","Profit|Lợi nhuận","Investment|Sự đầu tư","Strategy|Chiến lược","Plan|Kế hoạch",
-  "Goal|Mục tiêu (ngắn hạn)","Objective|Mục tiêu (dài hạn)","Success|Sự thành công","Failure|Sự thất bại","Report|Bản báo cáo",
-  "Presentation|Bài thuyết trình","Experience|Kinh nghiệm","Resume|Sơ yếu lý lịch","Interview|Phỏng vấn","Career|Sự nghiệp",
-  "Profession|Nghề nghiệp","Industry|Ngành công nghiệp","Organization|Tổ chức","Department|Phòng ban","Team|Đội/Nhóm",
-  "Leader|Người lãnh đạo","Boss|Ông chủ","Meeting|Cuộc họp","Schedule|Lịch trình","Deadline|Hạn chót",
+  const VOCAB_DB = RAW_VOCAB.map(str => {
+    let parts = str.split('|');
+    return { w: parts[0], m: parts[1] };
+  });
 
-  // --- CẢM XÚC & TRẠNG THÁI ---
-  "Angry|Tức giận","Anxious|Loâu","Bored|Chán nản","Cheerful|Vui tươi","Confused|Bối rối",
-  "Curious|Tò mò","Depressed|Trầm cảm/Tuyệt vọng","Disappointed|Thất vọng","Eager|Háo hức","Embarrassed|Xấu hổ",
-  "Excited|Phấn khích","Exhausted|Kiệt sức","Fascinated|Bị lôi cuốn","Frustrated|Bực bội","Glad|Vui lòng",
-  "Guilty|Có tội/Tội lỗi","Happy|Vui vẻ","Hopeful|Đầy hy vọng","Hostile|Thù địch","Hurt|Tổn thương",
-  "Innocent|Ngây thơ/Vô tội","Jealous|Ghen tỵ","Lonely|Cô đơn","Mad|Phát điên/Tức giận","Numb|Tê liệt/Vô cảm",
-  "Overwhelmed|Bị choáng ngợp","Peaceful|Bình yên","Pleased|Hài lòng","Proud|Tự hào","Relieved|Nhẹ nhõm",
-  "Sad|Buồn bã","Satisfied|Thỏa mãn","Scared|Sợ hãi","Shocked|Sốc","Shy|Nhút nhát",
-  "Sorry|Hối tiếc/Xin lỗi","Surprised|Ngạc nhiên","Tense|Căng thẳng","Terrified|Khiếp sợ","Thrilled|Vui sướng/Hồi hộp",
-  "Tired|Mệt mỏi","Upset|Buồn phiền","Worried|Lo lắng","Affectionate|Trìu mến","Amused|Thích thú",
+  // Biến toàn cục
+  let state = null;
+  let currentUserDocId = null; 
+  let testDirection = 'en-vi'; 
+  let currentWordAudio = '';   
+  let tempUserName = "";
 
-  // --- THIÊN NHIÊN, THỜI GIAN & ĐỜI SỐNG ---
-  "Animal|Động vật","Bird|Chim","Tree|Cây cối","Flower|Bông hoa","River|Dòng sông",
-  "Mountain|Ngọn núi","Ocean|Đại dương","Sea|Biển","Rain|Cơn mưa","Wind|Cơn gió",
-  "Snow|Tuyết","Cloud|Đám mây","Sky|Bầu trời","Star|Ngôi sao","Morning|Buổi sáng",
-  "Afternoon|Buổi chiều","Evening|Buổi tối","Night|Ban đêm","Week|Tuần","Month|Tháng",
-  "Year|Năm","Today|Hôm nay","Tomorrow|Ngày mai","Yesterday|Hôm qua","Always|Luôn luôn",
-  "Never|Không bao giờ","Often|Thường xuyên","Sometimes|Đôi khi","Rarely|Hiếm khi","Usually|Thông thường",
-  "Early|Sớm","Late|Muộn","Soon|Sớm thôi","Once|Một lần","Twice|Hai lần",
-  "Again|Lần nữa","Before|Trước khi","After|Sau khi","During|Trong suốt","While|Trong khi",
-
-  // --- ĐỒ VẬT & MÓN ĂN QUEN THUỘC ---
-  "Bread|Bánh mì","Butter|Bơ","Cheese|Phô mai","Chicken|Thịt gà","Coffee|Cà phê",
-  "Dinner|Bữa tối","Fruit|Trái cây","Garlic|Tỏi","Honey|Mật ong","Juice|Nước ép",
-  "Kitchen|Nhà bếp","Lemon|Quả chanh","Meat|Thịt","Milk|Sữa","Onion|Hành tây",
-  "Orange|Quả cam","Pepper|Hạt tiêu","Potato|Khoai tây","Recipe|Công thức nấu ăn","Rice|Gạo/Cơm",
-  "Salad|Rau trộn","Salt|Muối","Sandwich|Bánh mì kẹp","Sauce|Nước sốt","Soup|Món súp",
-  "Sugar|Đường (ăn)","Sweet|Ngọt ngào/Kẹo","Tomato|Cà chua","Vegetable|Rau củ","Water|Nước",
-  "Window|Cửa sổ","Door|Cửa ra vào","Table|Cái bàn","Chair|Cái ghế","Bed|Cái giường",
-
-  // --- BỘ TỪ VỰNG "MẬT NGỌT" DÀNH CHO CRUSH ---
-  "Affection|Sự yêu thương","Allure|Sức quyến rũ","Angelic|Tựa thiên thần","Beloved|Người yêu dấu","Blossom|Nở rộ",
-  "Captivate|Làm say đắm","Charm|Sự duyên dáng","Companion|Người đồng hành","Cuddle|Ôm ấp","Darling|Người thương",
-  "Dazzling|Sáng chói/Lộng lẫy","Devotion|Sự tận tâm","Embrace|Cái ôm","Enchant|Bỏ bùa mê","Endear|Làm cho được yêu mến",
-  "Eternity|Sự vĩnh cửu","Fancy|Say mê/Thích","Flirt|Tán tỉnh","Fondness|Sự yêu mến","Gentle|Dịu dàng",
-  "Heartthrob|Người trong mộng","Infatuate|Làm đắm say","Intimate|Thân mật","Kiss|Nụ hôn","Lovable|Đáng yêu",
-  "Lullaby|Khúc hát ru","Magic|Phép màu/Kỳ diệu","Melody|Giai điệu","Muse|Nàng thơ","Passion|Niềm đam mê",
-  "Precious|Quý giá","Promise|Lời hứa","Radiant|Rạng rỡ","Romance|Sự lãng mạn","Rose|Hoa hồng",
-  "Serenade|Bản tình ca","Soulmate|Bạn tâm giao","Sparkle|Lấp lánh","Stunning|Đẹp sững sờ","Sweetheart|Người yêu",
-  "Tender|Mềm mại/Dịu dàng","Treasure|Kho báu/Trân quý","Valentine|Người tình","Whisper|Lời thì thầm","Wonderful|Tuyệt vời",
-  "Yearn|Khao khát","Zeal|Sự nhiệt huyết","Mesmerize|Mê hoặc","Breathtaking|Đẹp ngộp thở","Forever|Mãi mãi"
-];
-
-const VOCAB_DB = RAW_VOCAB.map(str => {
-  let parts = str.split('|');
-  return { w: parts[0], m: parts[1] };
-});
-
-let state = JSON.parse(localStorage.getItem('crush_app')) || { 
-  userName: '', isCrush: false,
-  xp: 0, streak: 0, lastCheckin: null, 
-  words: VOCAB_DB.map((v,i)=>({id:i, ...v, nextTs:0, step:0})), 
-  queue: [], titleIdx: 0 
-};
-
-let testDirection = 'en-vi'; 
-let currentWordAudio = '';   
-
-if(state.words.length < VOCAB_DB.length) {
-  for(let i = state.words.length; i < VOCAB_DB.length; i++) {
-    state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
+  // Tạo state mặc định
+  function getDefaultState(name, method) {
+    let normalized = name.toLowerCase();
+    let isCrush = (normalized === 'yến ngọc' || normalized === 'yen ngoc');
+    return { 
+      userName: name, 
+      isCrush: isCrush,
+      loginMethod: method,
+      xp: 0, streak: 0, lastCheckin: null, 
+      words: VOCAB_DB.map((v,i)=>({id:i, ...v, nextTs:0, step:0})), 
+      queue: [], titleIdx: 0 
+    };
   }
-}
 
-function checkLogin() {
-  if (state.userName) {
+  // Hàm lưu lên Firebase (Thay thế cho localStorage cũ)
+  async function save() { 
+    if(currentUserDocId && state) {
+      try {
+        await setDoc(doc(db, "users", currentUserDocId), state);
+        updateUI(); 
+      } catch (e) {
+        console.error("Lỗi khi lưu dữ liệu: ", e);
+        showToast("Lỗi đồng bộ dữ liệu!");
+      }
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('ui-xp').innerText = state.xp;
+    document.getElementById('ui-streak').innerText = state.streak;
+    document.getElementById('queueStatus').innerText = state.queue.length > 0 ? `Hôm nay còn: ${state.queue.length} từ` : `Đã hoàn thành!`;
+    
+    if (state.isCrush) {
+      document.getElementById('userAvatar').style.backgroundImage = "url('img1.jpg')";
+      let newIdx = 0;
+      for(let i=TITLES.length-1; i>=0; i--) { if(state.xp >= TITLES[i].reqXp) { newIdx = i; break; } }
+      state.titleIdx = newIdx;
+
+      let curT = TITLES[state.titleIdx], nextT = TITLES[state.titleIdx + 1];
+      document.getElementById('userTitle').innerText = curT.name;
+      
+      if(nextT) {
+        document.getElementById('xpNextLevel').innerText = `Cần ${nextT.reqXp - state.xp} EXP để lên cấp`;
+        document.getElementById('titleProgress').style.width = Math.min(100, ((state.xp - curT.reqXp)/(nextT.reqXp - curT.reqXp))*100) + '%';
+      } else {
+        document.getElementById('xpNextLevel').innerText = 'Cấp tối đa!';
+        document.getElementById('titleProgress').style.width = '100%';
+      }
+    } else {
+      document.getElementById('userAvatar').style.backgroundImage = "url('https://api.dicebear.com/7.x/notionists/svg?seed=love')";
+      document.getElementById('userTitle').innerText = "Học viên chăm chỉ";
+      document.getElementById('xpNextLevel').innerText = "Chế độ danh hiệu đang ẩn";
+      document.getElementById('titleProgress').style.width = '100%';
+    }
+
+    if(state.queue.length === 0) {
+      document.getElementById('studyArea').style.display = 'none';
+      document.getElementById('finishScreen').style.display = 'block';
+    } else {
+      document.getElementById('studyArea').style.display = 'block';
+      document.getElementById('finishScreen').style.display = 'none';
+    }
+  }
+
+  function initQueue() {
+    if (state.queue.length === 0) {
+      let due = state.words.filter(w => w.nextTs <= Date.now()).sort(()=>0.5 - Math.random()).slice(0, 5);
+      state.queue = due.map(w => w.id);
+    }
+    save(); loadWord(); 
+  }
+
+  function loadWord() {
+    if(state.queue.length === 0) return;
+    const w = state.words.find(x => x.id === state.queue[0]);
+    
+    currentWordAudio = w.w; 
+    document.getElementById('focusWord').innerText = w.w;
+    document.getElementById('focusMeaning').innerText = w.m;
+    
+    if (state.isCrush) {
+      const randomHint = SECRET_HINTS[Math.floor(Math.random() * SECRET_HINTS.length)];
+      document.getElementById('secretHint').innerText = randomHint;
+      document.getElementById('secretHint').style.display = 'block';
+    } else {
+      document.getElementById('secretHint').style.display = 'none';
+    }
+
+    document.getElementById('focusInput').style.display = 'none';
+    document.getElementById('learnControls').style.display = 'flex';
+    document.getElementById('testControls').style.display = 'none';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg; t.style.opacity = 1;
+    setTimeout(() => t.style.opacity = 0, 2500);
+  }
+
+  function checkLevelUp(oldXp, newXp) {
+    if (!state.isCrush) return;
+    let oldIdx = 0, newIdx = 0;
+    for(let i=TITLES.length-1; i>=0; i--) { if(oldXp >= TITLES[i].reqXp) { oldIdx = i; break; } }
+    for(let i=TITLES.length-1; i>=0; i--) { if(newXp >= TITLES[i].reqXp) { newIdx = i; break; } }
+    
+    if(newIdx > oldIdx) {
+      document.getElementById('modalTitleName').innerText = TITLES[newIdx].name;
+      document.getElementById('modalMessage').innerText = TITLES[newIdx].msg;
+      document.getElementById('levelModal').style.display = 'flex';
+    }
+  }
+
+  function markCorrect() {
+    const w = state.words.find(x => x.id === state.queue[0]);
+    w.step++; w.nextTs = Date.now() + ([1,3,7,14][Math.min(w.step, 3)] * 86400000);
+    state.queue.shift(); 
+    
+    let oldXp = state.xp;
+    state.xp += 20;
+    showToast('Chính xác! +20 EXP');
+    
+    checkLevelUp(oldXp, state.xp); 
+    save(); loadWord(); 
+  }
+
+  window.playAudio = function() {
+    if ('speechSynthesis' in window) {
+      let u = new SpeechSynthesisUtterance(currentWordAudio);
+      u.lang = 'en-US'; 
+      window.speechSynthesis.speak(u);
+    } else {
+      showToast('Trình duyệt không hỗ trợ đọc âm thanh');
+    }
+  };
+
+  // --- LOGIC GIAO DIỆN ĐĂNG NHẬP ---
+
+  document.getElementById('btnNextStep').onclick = () => {
+    let name = document.getElementById('loginInput').value.trim();
+    if(!name) return showToast('Nhập tên để tiếp tục nhé!');
+    tempUserName = name;
+    document.getElementById('displayName').innerText = name;
+    document.getElementById('step1Name').style.display = 'none';
+    document.getElementById('step2Method').style.display = 'block';
+  };
+
+  document.getElementById('loginInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') document.getElementById('btnNextStep').click();
+  });
+
+  document.getElementById('btnBackStep').onclick = () => {
+    document.getElementById('step2Method').style.display = 'none';
+    document.getElementById('step1Name').style.display = 'block';
+  };
+
+  // Xử lý lấy dữ liệu từ Firebase
+  async function fetchUserData(method) {
+    const docRef = doc(db, "users", currentUserDocId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      state = docSnap.data();
+      // Chèn thêm từ vựng mới nếu database cũ bị thiếu
+      if(state.words.length < VOCAB_DB.length) {
+        for(let i = state.words.length; i < VOCAB_DB.length; i++) {
+          state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
+        }
+      }
+    } else {
+      state = getDefaultState(tempUserName, method);
+      await setDoc(docRef, state); // Ghi file mới lên Firestore
+    }
+
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.opacity = '1';
     document.getElementById('mainApp').style.pointerEvents = 'auto';
     document.getElementById('headerTitle').innerText = state.isCrush ? "Góc của Yến Ngọc" : "Góc Học Tập";
-    initQueue();
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-  }
-}
-
-document.getElementById('btnLogin').onclick = () => {
-  let name = document.getElementById('loginInput').value.trim();
-  if(!name) return showToast('Nhập tên để bắt đầu nhé!');
-  
-  state.userName = name;
-  let normalized = name.toLowerCase();
-  state.isCrush = (normalized === 'yến ngọc' || normalized === 'yen ngoc');
-  save();
-  checkLogin();
-  showToast(`Chào mừng ${name} đến với hệ thống!`);
-};
-
-document.getElementById('loginInput').addEventListener('keypress', function (e) {
-  if (e.key === 'Enter') document.getElementById('btnLogin').click();
-});
-
-function save() { localStorage.setItem('crush_app', JSON.stringify(state)); updateUI(); }
-
-function initQueue() {
-  if (state.queue.length === 0) {
-    let due = state.words.filter(w => w.nextTs <= Date.now()).sort(()=>0.5 - Math.random()).slice(0, 5);
-    state.queue = due.map(w => w.id);
-  }
-  save(); loadWord(); 
-}
-
-function updateUI() {
-  document.getElementById('ui-xp').innerText = state.xp;
-  document.getElementById('ui-streak').innerText = state.streak;
-  document.getElementById('queueStatus').innerText = state.queue.length > 0 ? `Hôm nay còn: ${state.queue.length} từ` : `Đã hoàn thành!`;
-  
-  // Xử lý thay đổi Avatar nếu là Yến Ngọc
-  if (state.isCrush) {
-    document.getElementById('userAvatar').style.backgroundImage = "url('img1.jpg')"; // Nếu đuôi ảnh khác, hãy đổi chữ .jpg
-  } else {
-    document.getElementById('userAvatar').style.backgroundImage = "url('https://api.dicebear.com/7.x/notionists/svg?seed=love')";
-  }
-
-  // Chỉ nâng cấp danh hiệu và hiện tiến trình nếu là Yến Ngọc
-  if (state.isCrush) {
-    let newIdx = 0;
-    for(let i=TITLES.length-1; i>=0; i--) { if(state.xp >= TITLES[i].reqXp) { newIdx = i; break; } }
-    state.titleIdx = newIdx;
-
-    let curT = TITLES[state.titleIdx], nextT = TITLES[state.titleIdx + 1];
-    document.getElementById('userTitle').innerText = curT.name;
     
-    if(nextT) {
-      document.getElementById('xpNextLevel').innerText = `Cần ${nextT.reqXp - state.xp} EXP để lên cấp`;
-      document.getElementById('titleProgress').style.width = Math.min(100, ((state.xp - curT.reqXp)/(nextT.reqXp - curT.reqXp))*100) + '%';
-    } else {
-      document.getElementById('xpNextLevel').innerText = 'Cấp tối đa!';
-      document.getElementById('titleProgress').style.width = '100%';
+    initQueue();
+    showToast(`Chào mừng ${state.userName} quay lại!`);
+  }
+
+  // Nút Khách
+  document.getElementById('btnGuestLogin').onclick = async () => {
+    showToast('Đang tải dữ liệu...');
+    currentUserDocId = "guest_" + tempUserName.toLowerCase().replace(/\s+/g, '_');
+    await fetchUserData('guest');
+  };
+
+  // Nút Google
+  document.getElementById('btnGoogleLogin').onclick = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      currentUserDocId = "google_" + result.user.uid;
+      showToast('Đang đồng bộ dữ liệu Google...');
+      await fetchUserData('google');
+    } catch (error) {
+      console.error(error);
+      showToast('Đăng nhập Google thất bại!');
     }
-  } else {
-    // Nếu là người khác
-    document.getElementById('userTitle').innerText = "Học viên chăm chỉ";
-    document.getElementById('xpNextLevel').innerText = "Chế độ danh hiệu đang ẩn";
-    document.getElementById('titleProgress').style.width = '100%';
-  }
+  };
 
-  if(state.queue.length === 0) {
-    document.getElementById('studyArea').style.display = 'none';
-    document.getElementById('finishScreen').style.display = 'block';
-  } else {
-    document.getElementById('studyArea').style.display = 'block';
-    document.getElementById('finishScreen').style.display = 'none';
-  }
-}
+  // --- LOGIC SỰ KIỆN HỌC TẬP ---
 
-function checkLevelUp(oldXp, newXp) {
-  if (!state.isCrush) return; // Không hiển thị thông báo lên cấp cho người ngoài
+  document.getElementById('btnCheckin').onclick = () => {
+    const today = new Date().toDateString();
+    if(state.lastCheckin === today) return showToast('Hôm nay điểm danh rồi nha!');
+    
+    let oldXp = state.xp;
+    state.lastCheckin = today; state.streak++; state.xp += 10;
+    showToast('Điểm danh thành công! +10 EXP'); 
+    checkLevelUp(oldXp, state.xp); 
+    save();
+  };
 
-  let oldIdx = 0, newIdx = 0;
-  for(let i=TITLES.length-1; i>=0; i--) { if(oldXp >= TITLES[i].reqXp) { oldIdx = i; break; } }
-  for(let i=TITLES.length-1; i>=0; i--) { if(newXp >= TITLES[i].reqXp) { newIdx = i; break; } }
-  
-  if(newIdx > oldIdx) {
-    document.getElementById('modalTitleName').innerText = TITLES[newIdx].name;
-    document.getElementById('modalMessage').innerText = TITLES[newIdx].msg;
-    document.getElementById('levelModal').style.display = 'flex';
-  }
-}
+  document.getElementById('btnStartTest').onclick = () => {
+    const w = state.words.find(x => x.id === state.queue[0]);
+    testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.innerText = msg; t.style.opacity = 1;
-  setTimeout(() => t.style.opacity = 0, 2500);
-}
+    if (testDirection === 'en-vi') {
+      document.getElementById('focusWord').innerText = w.w;
+      document.getElementById('focusMeaning').innerText = '...';
+      document.getElementById('focusInput').placeholder = 'Gõ nghĩa tiếng Việt...';
+    } else {
+      document.getElementById('focusWord').innerText = '...';
+      document.getElementById('focusMeaning').innerText = w.m;
+      document.getElementById('focusInput').placeholder = 'Gõ từ tiếng Anh...';
+    }
+    
+    document.getElementById('secretHint').style.display = 'none'; 
+    document.getElementById('focusInput').value = '';
+    document.getElementById('focusInput').style.display = 'block';
+    document.getElementById('learnControls').style.display = 'none';
+    document.getElementById('testControls').style.display = 'flex';
+    document.getElementById('focusInput').focus();
+  };
 
-function loadWord() {
-  if(state.queue.length === 0) return;
-  const w = state.words.find(x => x.id === state.queue[0]);
-  
-  currentWordAudio = w.w; 
-  document.getElementById('focusWord').innerText = w.w;
-  document.getElementById('focusMeaning').innerText = w.m;
-  
-  if (state.isCrush) {
-    const randomHint = SECRET_HINTS[Math.floor(Math.random() * SECRET_HINTS.length)];
-    document.getElementById('secretHint').innerText = randomHint;
-    document.getElementById('secretHint').style.display = 'block';
-  } else {
-    document.getElementById('secretHint').style.display = 'none';
-  }
+  document.getElementById('btnGiveUp').onclick = () => {
+    state.xp = Math.max(0, state.xp - 20); 
+    showToast('Không sao, học lại nhé! -20 EXP');
+    save(); loadWord(); 
+  };
 
-  document.getElementById('focusInput').style.display = 'none';
-  document.getElementById('learnControls').style.display = 'flex';
-  document.getElementById('testControls').style.display = 'none';
-}
+  document.getElementById('btnCheck').onclick = () => {
+    const w = state.words.find(x => x.id === state.queue[0]);
+    let input = document.getElementById('focusInput').value.trim().toLowerCase();
+    let target = testDirection === 'en-vi' ? w.m.toLowerCase() : w.w.toLowerCase();
 
-document.getElementById('btnStartTest').onclick = () => {
-  const w = state.words.find(x => x.id === state.queue[0]);
-  testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
+    if(input === target) markCorrect();
+    else showToast('Sai mất rồi, thử lại nhé!');
+  };
 
-  if (testDirection === 'en-vi') {
-    document.getElementById('focusWord').innerText = w.w;
-    document.getElementById('focusMeaning').innerText = '...';
-    document.getElementById('focusInput').placeholder = 'Gõ nghĩa tiếng Việt...';
-  } else {
-    document.getElementById('focusWord').innerText = '...';
-    document.getElementById('focusMeaning').innerText = w.m;
-    document.getElementById('focusInput').placeholder = 'Gõ từ tiếng Anh...';
-  }
-  
-  document.getElementById('secretHint').style.display = 'none'; 
-  document.getElementById('focusInput').value = '';
-  document.getElementById('focusInput').style.display = 'block';
-  document.getElementById('learnControls').style.display = 'none';
-  document.getElementById('testControls').style.display = 'flex';
-  document.getElementById('focusInput').focus();
-};
+  document.getElementById('focusInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') document.getElementById('btnCheck').click();
+  });
 
-document.getElementById('btnGiveUp').onclick = () => {
-  let oldXp = state.xp;
-  state.xp = Math.max(0, state.xp - 20); 
-  showToast('Không sao, học lại nhé! -20 EXP');
-  save(); 
-  loadWord(); 
-};
+  // Hiển thị khung đăng nhập ban đầu
+  document.getElementById('loginScreen').style.display = 'flex';
 
-document.getElementById('btnCheck').onclick = () => {
-  const w = state.words.find(x => x.id === state.queue[0]);
-  let input = document.getElementById('focusInput').value.trim().toLowerCase();
-  let target = testDirection === 'en-vi' ? w.m.toLowerCase() : w.w.toLowerCase();
-
-  if(input === target) markCorrect();
-  else showToast('Sai mất rồi, thử lại nhé!');
-};
-
-document.getElementById('focusInput').addEventListener('keypress', function (e) {
-  if (e.key === 'Enter') document.getElementById('btnCheck').click();
-});
-
-function markCorrect() {
-  const w = state.words.find(x => x.id === state.queue[0]);
-  w.step++; w.nextTs = Date.now() + ([1,3,7,14][Math.min(w.step, 3)] * 86400000);
-  state.queue.shift(); 
-  
-  let oldXp = state.xp;
-  state.xp += 20;
-  showToast('Chính xác! +20 EXP');
-  
-  checkLevelUp(oldXp, state.xp); 
-  save(); 
-  loadWord(); 
-}
-
-function playAudio() {
-  if ('speechSynthesis' in window) {
-    let u = new SpeechSynthesisUtterance(currentWordAudio);
-    u.lang = 'en-US'; 
-    window.speechSynthesis.speak(u);
-  } else {
-    showToast('Trình duyệt không hỗ trợ đọc âm thanh');
-  }
-}
-
-document.getElementById('btnCheckin').onclick = () => {
-  const today = new Date().toDateString();
-  if(state.lastCheckin === today) return showToast('Hôm nay điểm danh rồi nha!');
-  
-  let oldXp = state.xp;
-  state.lastCheckin = today; state.streak++; state.xp += 10;
-  showToast('Điểm danh thành công! +10 EXP'); 
-  checkLevelUp(oldXp, state.xp); 
-  save();
-};
-
-checkLogin();
 </script>
 </body>
 </html>
