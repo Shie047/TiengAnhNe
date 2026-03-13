@@ -194,7 +194,7 @@
       <p id="revHardModeTip" style="color: var(--success); font-size: 14px; font-style: italic; display: none;">Chế độ Siêu Khó: Nghe và gõ cả 2!</p>
       
       <div id="revWordDisplay" style="font-size: clamp(30px, 8vw, 40px); font-weight: bold; margin: 15px 0;">---</div>
-      <button class="btn" onclick="playReviewAudio()" style="margin: 0 auto 20px;">🔊 Nghe phát âm</button>
+      <button class="btn" onclick="playReviewAudio()" style="margin: 0 auto 20px;">Nghe phát âm</button>
       
       <input type="text" id="revInputEn" class="focus-input" placeholder="Gõ từ tiếng Anh..." autocomplete="off" style="margin-bottom: 10px; border-color: #f59e0b;">
       <input type="text" id="revInputVi" class="focus-input" placeholder="Gõ nghĩa tiếng Việt..." autocomplete="off" style="margin-bottom: 20px; border-color: #f59e0b;">
@@ -206,9 +206,9 @@
 
   <div class="modal" id="punishModal">
     <div class="modal-box" style="border-color: #e94560;">
-      <h2 style="color: #e94560; margin-bottom: 15px; font-size: 30px;">Trời ơiii 😤</h2>
+      <h2 style="color: #e94560; margin-bottom: 15px; font-size: 30px;">Trời ơiii</h2>
       <p id="punishMsg" style="color: #fff; margin-bottom: 25px; font-size: 18px; line-height: 1.5;"></p>
-      <button class="btn primary" onclick="closePunishAndNext()" style="width: 100%;">Dạ, em biết rồi 🥺</button>
+      <button class="btn primary" onclick="closePunishAndNext()" style="width: 100%;">Xác Nhận</button>
     </div>
   </div>
 
@@ -367,7 +367,7 @@
       if (Notification.permission === "granted") {
         const now = new Date();
         if (now.getHours() === 0 && now.getMinutes() >= 3 && localStorage.getItem('last_notified') !== now.toDateString()) {
-          new Notification("Góc Học Tập gọi nè! 🦉", {
+          new Notification("Góc Học Tập gọi nè!", {
             body: `Chào ${state.userName || 'bạn'}, qua ngày mới rồi! Vào học vài từ vựng rồi hẵng ngủ cho ngon nhé!`,
             icon: "https://api.dicebear.com/7.x/notionists/svg?seed=love"
           });
@@ -661,7 +661,7 @@
 
     if (currentRevWord.step >= 3 && Math.random() > 0.5) {
       revMode = 2; // Hard mode
-      document.getElementById('revWordDisplay').innerText = "❓❓❓";
+      document.getElementById('revWordDisplay').innerText = "????";
       document.getElementById('revHardModeTip').style.display = 'block';
       inputEn.style.display = 'block';
       inputVi.style.display = 'block';
