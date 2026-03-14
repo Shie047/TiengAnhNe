@@ -545,7 +545,7 @@
     document.getElementById('step1Name').style.display = 'block';
   };
 
-  async function fetchUserData(method) {
+async function fetchUserData(method) {
     const cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
     if (cachedData) {
       state = JSON.parse(cachedData);
@@ -558,6 +558,18 @@
     
     if (docSnap.exists()) {
       state = docSnap.data();
+      
+      // BƯỚC SỬA LỖI UNDEFINED: Cập nhật từ điển mới nhất vào data cũ của user
+      for (let i = 0; i < state.words.length; i++) {
+        if (VOCAB_DB[i]) { // Đảm bảo từ đó vẫn tồn tại trong Data gốc
+          state.words[i].t = VOCAB_DB[i].t || "";   // Cập nhật loại từ
+          state.words[i].ex = VOCAB_DB[i].ex || ""; // Cập nhật ví dụ
+          state.words[i].m = VOCAB_DB[i].m;         // Cập nhật lại nghĩa (phòng khi bạn sửa nghĩa)
+          state.words[i].w = VOCAB_DB[i].w;         // Cập nhật lại từ
+        }
+      }
+
+      // Thêm các từ hoàn toàn mới nếu Database có thêm từ vựng
       if(state.words.length < VOCAB_DB.length) {
         for(let i = state.words.length; i < VOCAB_DB.length; i++) {
           state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
