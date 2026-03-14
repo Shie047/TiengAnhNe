@@ -75,7 +75,19 @@
     }
 
     .focus-meaning { font-size: clamp(20px, 6vw, 24px); color: #ccc; margin-bottom: 5px; }
-    .focus-example { font-size: clamp(14px, 4vw, 16px); color: #a5b4fc; margin-bottom: 15px; font-style: italic; display: none; }
+    
+    /* Style mới cho vùng hiển thị ví dụ song ngữ */
+    .example-container {
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px auto 25px auto;
+      max-width: 90%;
+      display: none;
+    }
+    .focus-example-en { font-size: clamp(15px, 4vw, 18px); color: #a5b4fc; font-style: italic; margin-bottom: 5px; }
+    .focus-example-vi { font-size: clamp(14px, 3.5vw, 16px); color: #9ca3af; }
+
     .secret-hint { font-size: clamp(14px, 4vw, 16px); color: var(--accent2); font-style: italic; margin-bottom: 30px; display: none; min-height: 20px;}
     
     .focus-input { 
@@ -173,7 +185,12 @@
         <div id="studyArea">
           <div class="focus-word" id="focusWord">Đang tải...</div>
           <div class="focus-meaning" id="focusMeaning">---</div>
-          <div class="focus-example" id="focusExample">---</div>
+          
+          <div class="example-container" id="exampleContainer">
+            <div class="focus-example-en" id="focusExampleEn">---</div>
+            <div class="focus-example-vi" id="focusExampleVi">---</div>
+          </div>
+
           <div class="secret-hint" id="secretHint"></div>
           
           <input type="text" class="focus-input" id="focusInput" autocomplete="off">
@@ -279,13 +296,13 @@
   async function loadVocabulary() {
     let cachedVocab = localStorage.getItem('vocab_database');
     
-    // TỰ ĐỘNG XÓA CACHE NẾU LÀ BẢN CŨ KHÔNG CÓ LOẠI TỪ
     if (cachedVocab) {
       let parsed = JSON.parse(cachedVocab);
-      if (parsed.length > 0 && parsed[0].t === undefined) {
-        console.log("Phát hiện từ điển cũ (không có loại từ). Đang xóa để tải lại...");
+      // Kiểm tra xem dữ liệu có bản dịch ví dụ (exVi) chưa, nếu chưa thì xóa tải lại
+      if (parsed.length > 0 && parsed[0].exVi === undefined) {
+        console.log("Phát hiện từ điển cũ. Đang xóa để tải lại bản song ngữ...");
         localStorage.removeItem('vocab_database');
-        cachedVocab = null; // Bắt buộc tải lại
+        cachedVocab = null; 
       } else {
         VOCAB_DB = parsed;
         isVocabReady = true;
@@ -297,48 +314,23 @@
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
-      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].t !== undefined) {
+      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].exVi !== undefined) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
-        // CẤU TRÚC MỚI: Từ | Loại từ | Nghĩa | Ví dụ
-        const RAW_VOCAB = [
-          "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.",
-          "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.",
-          "Break down|v|Hỏng hóc, Suy sụp|My car broke down on the way to work.",
-          "Give up|v|Từ bỏ, Bỏ cuộc|Don't give up on your dreams.",
-          "Figure out|v|Tìm ra, Hiểu ra|We need to figure out a solution.",
-          "Bring up|v|Nuôi dưỡng, Đề cập|She brought up three children.",
-          "Call off|v|Hủy bỏ|The meeting was called off due to rain.",
-          "Catch up with|v|Bắt kịp|I need to catch up with my work.",
-          "Count on|v|Tin cậy, Dựa vào|You can count on me.",
-          "Put off|v|Trì hoãn|Never put off until tomorrow what you can do today.",
-          "Accept|v|Chấp nhận|She decided to accept the job offer.",
-          "Decision|n|Quyết định|It was a difficult decision to make.",
-          "Encourage|v|Động viên, Khuyến khích|My parents always encourage me.",
-          "Genuine|adj|Thành thật, Chân thật|She showed a genuine interest in our work.",
-          "Knowledge|n|Kiến thức|Knowledge is power.",
-          "Beautiful|adj|Xinh đẹp, Đẹp|She is a beautiful girl.",
-          "Quickly|adv|Nhanh chóng, Nhanh|He completed the task very quickly.",
-          "Information|n|Thông tin|I need more information about the project.",
-          "Wealth|n|Sự giàu có, Của cải|Health is better than wealth.",
-          "Destiny|n|Định mệnh, Số phận|You cannot escape your destiny.",
-          "Gorgeous|adj|Tuyệt đẹp, Lộng lẫy|You look absolutely gorgeous tonight.",
-          "Ethereal|adj|Thanh tao, Siêu phàm|She has an ethereal beauty.",
-          "Breathtaking|adj|Đẹp ngộp thở, Hấp dẫn|The view from the top is breathtaking.",
-          "Mesmerize|v|Mê hoặc, Quyến rũ|I was completely mesmerized by the performance."
-        ];
+        // CẤU TRÚC MỚI (5 phần): Từ | Loại từ | Nghĩa | Ví dụ Anh | Nghĩa Ví dụ Việt
+        const RAW_VOCAB = [];
         
         VOCAB_DB = RAW_VOCAB.map(str => {
           let parts = str.split('|');
-          return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "" };
+          return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "", exVi: parts[4] || "" };
         });
 
         await setDoc(vocabRef, { words: VOCAB_DB });
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
-        console.log("Đã khởi tạo Database từ vựng (Có Từ Loại) thành công!");
+        console.log("Đã khởi tạo Database từ vựng song ngữ thành công!");
       }
     } catch (e) {
       console.error("Lỗi tải dữ liệu từ vựng:", e);
@@ -459,17 +451,18 @@
     const w = state.words.find(x => x.id === state.queue[0]);
     currentWordAudio = w.w; 
     
-    // Hiển thị Từ vựng + Loại từ an toàn (chống undefined)
     let typeHtml = w.t ? `<span class="word-type">${w.t}</span>` : "";
     document.getElementById('focusWord').innerHTML = `${w.w} ${typeHtml}`;
     document.getElementById('focusMeaning').innerText = w.m;
     
-    // Hiển thị Ví dụ
+    // Hiển thị Ví dụ Song Ngữ
+    const exContainer = document.getElementById('exampleContainer');
     if (w.ex && w.ex.trim() !== "") {
-      document.getElementById('focusExample').innerText = `"${w.ex}"`;
-      document.getElementById('focusExample').style.display = 'block';
+      document.getElementById('focusExampleEn').innerText = `"${w.ex}"`;
+      document.getElementById('focusExampleVi').innerText = w.exVi ? `(${w.exVi})` : "";
+      exContainer.style.display = 'block';
     } else {
-      document.getElementById('focusExample').style.display = 'none';
+      exContainer.style.display = 'none';
     }
     
     if (state.isCrush) {
@@ -551,12 +544,11 @@
   async function fetchUserData(method) {
     let cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
     
-    // NẾU CACHE USER CŨ BỊ LỖI (CHƯA CÓ THUỘC TÍNH "t"), XÓA LUÔN KHÔNG DÙNG
     if (cachedData) {
       state = JSON.parse(cachedData);
-      if (state.words.length > 0 && state.words[0].t === undefined) {
+      if (state.words.length > 0 && state.words[0].exVi === undefined) {
         console.log("Tiến độ lưu cục bộ đã cũ. Đang tải bản mới từ máy chủ...");
-        state = null; // Ép tải lại
+        state = null; 
       } else {
         showMainAppUI(); 
         loadWord();
@@ -570,17 +562,17 @@
     if (docSnap.exists()) {
       state = docSnap.data();
       
-      // ĐỒNG BỘ: Cập nhật từ điển mới nhất (kèm t, ex) vào tiến độ học cũ của user
+      // ĐỒNG BỘ: Cập nhật từ điển mới nhất vào tiến độ học cũ của user
       for (let i = 0; i < state.words.length; i++) {
         if (VOCAB_DB[i]) { 
           state.words[i].t = VOCAB_DB[i].t || "";   
           state.words[i].ex = VOCAB_DB[i].ex || ""; 
+          state.words[i].exVi = VOCAB_DB[i].exVi || ""; 
           state.words[i].m = VOCAB_DB[i].m;         
           state.words[i].w = VOCAB_DB[i].w;         
         }
       }
 
-      // Thêm các từ hoàn toàn mới nếu Database có thêm
       if(state.words.length < VOCAB_DB.length) {
         for(let i = state.words.length; i < VOCAB_DB.length; i++) {
           state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
@@ -590,13 +582,12 @@
       if (!state) state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
     }
     
-    // Lưu đè lên Firebase ngay lập tức để fix triệt để
     await setDoc(docRef, state);
     localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
     
     showMainAppUI();
     initQueue(); 
-    loadWord(); // ÉP MÀN HÌNH VẼ LẠI CHỮ SAU KHI ĐÃ SỬA XONG LỖI
+    loadWord(); 
     setupDailyNotification();
     
     if (!cachedData) {
@@ -637,20 +628,22 @@
     const w = state.words.find(x => x.id === state.queue[0]);
     testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
     let typeHtml = w.t ? `<span class="word-type">${w.t}</span>` : "";
+    const exContainer = document.getElementById('exampleContainer');
 
     if (testDirection === 'en-vi') {
       document.getElementById('focusWord').innerHTML = `${w.w} ${typeHtml}`;
       document.getElementById('focusMeaning').innerText = '...';
-      document.getElementById('focusExample').style.display = 'none'; // Giấu ví dụ khi test
+      exContainer.style.display = 'none'; // Giấu ví dụ khi test Anh -> Việt
       document.getElementById('focusInput').placeholder = 'Gõ nghĩa tiếng Việt...';
     } else {
       document.getElementById('focusWord').innerHTML = `... ${typeHtml}`;
       document.getElementById('focusMeaning').innerText = w.m;
-      // Khi gõ tiếng Anh, hiển thị ví dụ dạng gợi ý điền vào chỗ trống
+      // Khi test Việt -> Anh, hiện gợi ý dạng điền vào chỗ trống
       if (w.ex) {
         let hiddenEx = w.ex.replace(new RegExp(w.w, "gi"), "_____");
-        document.getElementById('focusExample').innerText = `Gợi ý: "${hiddenEx}"`;
-        document.getElementById('focusExample').style.display = 'block';
+        document.getElementById('focusExampleEn').innerText = `Gợi ý: "${hiddenEx}"`;
+        document.getElementById('focusExampleVi').innerText = w.exVi ? `(${w.exVi})` : "";
+        exContainer.style.display = 'block';
       }
       document.getElementById('focusInput').placeholder = 'Gõ từ tiếng Anh...';
     }
