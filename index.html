@@ -176,7 +176,7 @@
           <input type="text" class="focus-input" id="focusInput" autocomplete="off">
           
           <div class="controls" id="learnControls">
-            <button class="btn info" id="btnSpeakEval">🎙️ Đánh giá phát âm</button>
+            <button class="btn info" id="btnSpeakEval">Đánh giá phát âm</button>
             <button class="btn" onclick="playAudio()">Nghe mẫu</button>
             <button class="btn primary" id="btnStartTest">Đã nhớ, kiểm tra ngay</button>
           </div>
@@ -201,7 +201,7 @@
       <div class="mock-q-type" id="mockQType">KỸ NĂNG NGHE</div>
       <div id="mockQContent" style="font-size: clamp(24px, 6vw, 36px); font-weight: bold; margin-bottom: 20px;">---</div>
       
-      <button class="btn" id="btnMockPlayAudio" style="margin: 0 auto 20px; display: none;">🔊 Nghe Lại</button>
+      <button class="btn" id="btnMockPlayAudio" style="margin: 0 auto 20px; display: none;">Nghe Lại</button>
       <button class="mic-btn" id="btnMockMic" style="display: none;">🎤</button>
       <input type="text" class="focus-input" id="mockInput" autocomplete="off" placeholder="Nhập đáp án của bạn...">
       
@@ -553,7 +553,7 @@
       const isCorrect = isAnswerCorrect(transcript, target);
 
       if (isCorrect) {
-        if (state.isCrush) showToast("Giọng bé yêu ngọt ngào quá, chuẩn 100% nha! 💖 (+5 EXP)");
+        if (state.isCrush) showToast("Giọng bé yêu ngọt ngào quá, chuẩn 100% nha! (+5 EXP)");
         else showToast("Phát âm xuất sắc! Đạt chuẩn 100%. (+5 EXP)");
         
         let oldXp = state.xp; state.xp += 5; checkLevelUp(oldXp, state.xp); save();
@@ -997,16 +997,16 @@
     
     let msg = "";
     if (mockCorrectCount === 15) {
-      msg = state.isCrush ? "Tuyệt đỉnh! Giỏi quá mức quy định rồi nha! Thưởng lớn nè (+100 EXP) 🥇" : "Điểm tuyệt đối! Xuất sắc! (+100 EXP)";
+      msg = state.isCrush ? "Tuyệt đỉnh! Giỏi quá mức quy định rồi nha! Thưởng lớn nè (+100 EXP)" : "Điểm tuyệt đối! Xuất sắc! (+100 EXP)";
       state.xp += 100;
     } else if (mockCorrectCount >= 10) {
       msg = state.isCrush ? "Rất tốt nha! Gần hoàn hảo rùi nè (+50 EXP) 🥈" : "Làm tốt lắm, kỹ năng rất vững! (+50 EXP)";
       state.xp += 50;
     } else if (mockCorrectCount >= 5) {
-      msg = state.isCrush ? "Tạm được á, nhưng mà cần cố gắng thêm chút nha! (+20 EXP) 🥉" : "Đạt mức trung bình. Cố gắng thêm nhé! (+20 EXP)";
+      msg = state.isCrush ? "Tạm được á, nhưng mà cần cố gắng thêm chút nha! (+20 EXP)" : "Đạt mức trung bình. Cố gắng thêm nhé! (+20 EXP)";
       state.xp += 20;
     } else {
-      msg = state.isCrush ? "Trời ơi sai nhiều quá nè! Dũa lại bài vở đi nha! (+5 EXP) 💔" : "Điểm hơi thấp. Bạn cần ôn tập thêm nhiều đó! (+5 EXP)";
+      msg = state.isCrush ? "Trời ơi sai nhiều quá nè! Dũa lại bài vở đi nha! (+5 EXP)" : "Điểm hơi thấp. Bạn cần ôn tập thêm nhiều đó! (+5 EXP)";
       state.xp += 5;
     }
     
