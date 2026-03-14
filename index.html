@@ -274,204 +274,11 @@
         isVocabReady = true;
       } else {
         // LẦN CHẠY ĐẦU TIÊN: Tự động đưa mảng cứng lên Firestore
-        // Ghi chú: Sau khi chạy thành công 1 lần, bạn có thể XÓA mảng TEMP_RAW_VOCAB này đi cho file siêu nhẹ!
-          const RAW_VOCAB = [
-
-    "Accept|Chấp nhận","Accident|Tai nạn","Achieve|Đạt được","Admire|Ngưỡng mộ","Adventure|Cuộc phiêu lưu",
-
-    "Brilliant|Xuất sắc","Balance|Cân bằng","Benefit|Lợi ích","Brave|Dũng cảm","Breathe|Hít thở",
-
-    "Calculate|Tính toán","Challenge|Thử thách","Character|Tính cách","Comfort|Sự thoải mái","Courage|Sự can đảm",
-
-    "Dangerous|Nguy hiểm","Decision|Quyết định","Develop|Phát triển","Discover|Khám phá","Distance|Khoảng cách",
-
-    "Education|Giáo dục","Effort|Nỗ lực","Encourage|Động viên","Energy|Năng lượng","Environment|Môi trường",
-
-    "Familiar|Quen thuộc","Focus|Tập trung","Forgive|Tha thứ","Frequent|Thường xuyên","Future|Tương lai",
-
-    "Generate|Tạo ra","Genuine|Thành thật","Glorious|Vẻ vang","Grateful|Biết ơn","Guarantee|Đảm bảo",
-
-    "Habit|Thói quen","Happiness|Hạnh phúc","Health|Sức khỏe","Honest|Trung thực","Hope|Hy vọng",
-
-    "Identify|Xác định","Imagine|Tưởng tượng","Improve|Cải thiện","Include|Bao gồm","Independent|Độc lập",
-
-    "Journey|Hành trình","Judge|Đánh giá","Justice|Công lý","Knowledge|Kiến thức","Language|Ngôn ngữ",
-
-    "Manage|Quản lý","Measure|Đo lường","Memory|Trí nhớ","Method|Phương pháp","Miracle|Phép màu",
-
-    "Natural|Tự nhiên","Necessary|Cần thiết","Nervous|Lo lắng","Notice|Chú ý","Nurture|Nuôi dưỡng",
-
-    "Object|Vật thể","Observe|Quan sát","Obvious|Rõ ràng","Occur|Xảy ra","Opportunity|Cơ hội",
-
-    "Patience|Kiên nhẫn","Perfect|Hoàn hảo","Persuade|Thuyết phục","Practice|Thực hành","Protect|Bảo vệ",
-
-    "Quality|Chất lượng","Question|Câu hỏi","Quick|Nhanh chóng","Quiet|Yên tĩnh","Quote|Trích dẫn",
-
-    "Realize|Nhận ra","Receive|Nhận","Recognize|Công nhận","Reflect|Phản chiếu","Respect|Tôn trọng",
-
-    "Satisfy|Làm hài lòng","Secret|Bí mật","Sensitive|Nhạy cảm","Serious|Nghiêm túc","Skill|Kỹ năng",
-
-    "Talent|Tài năng","Target|Mục tiêu","Theory|Lý thuyết","Thought|Suy nghĩ","Trust|Tin tưởng",
-
-    "Understand|Hiểu","Unique|Độc đáo","Useful|Hữu ích","Value|Giá trị","Vision|Tầm nhìn",
-
-    "Warning|Cảnh báo","Wealth|Sự giàu có","Wisdom|Sự khôn ngoan","Wonder|Tự hỏi","Worthy|Xứng đáng",
-
-    "Adorable|Đáng yêu","Destiny|Định mệnh","Cherish|Trân trọng","Gorgeous|Tuyệt đẹp","Joyful|Vui vẻ","Ethereal|Thanh tao",
-
-    "Abandon|Từ bỏ","Abolish|Hủy bỏ","Absorb|Hấp thụ","Accommodate|Cung cấp chỗ ở","Accompany|Đồng hành",
-
-    "Accumulate|Tích lũy","Accuse|Buộc tội","Acknowledge|Công nhận","Acquire|Thu được","Adapt|Thích nghi",
-
-    "Address|Giải quyết (vấn đề)","Adjust|Điều chỉnh","Administer|Quản lý","Admit|Thừa nhận","Adopt|Nhận nuôi",
-
-    "Advance|Tiến lên","Advise|Khuyên bảo","Affect|Ảnh hưởng","Afford|Có đủ khả năng","Agree|Đồng ý",
-
-    "Allow|Cho phép","Alter|Thay đổi","Analyze|Phân tích","Announce|Thông báo","Anticipate|Dự đoán",
-
-    "Apologize|Xin lỗi","Appeal|Kêu gọi","Appear|Xuất hiện","Apply|Áp dụng/Ứng tuyển","Appoint|Bổ nhiệm",
-
-    "Appreciate|Trân trọng","Approach|Tiếp cận","Approve|Tán thành","Argue|Tranh luận","Arise|Phát sinh",
-
-    "Arrange|Sắp xếp","Arrive|Đến nơi","Ask|Hỏi","Assess|Đánh giá","Assign|Phân công",
-
-    "Assist|Hỗ trợ","Assume|Giả định","Assure|Đảm bảo","Attach|Đính kèm","Attack|Tấn công",
-
-    "Attempt|Cố gắng","Attend|Tham gia","Attract|Thu hút","Avoid|Tránh xa","Awake|Thức giấc",
-
-    "Ability|Khả năng","Absence|Sự vắng mặt","Access|Quyền truy cập","Account|Tài khoản","Achievement|Thành tựu",
-
-    "Action|Hành động","Activity|Hoạt động","Addition|Sự thêm vào","Advantage|Lợi thế","Agreement|Hiệp ước/Sự đồng ý",
-
-    "Amount|Số lượng","Analysis|Sự phân tích","Answer|Câu trả lời","Appearance|Ngoại hình","Application|Ứng dụng/Đơn xin",
-
-    "Argument|Sự tranh cãi","Arrangement|Sự sắp xếp","Article|Bài báo","Aspect|Khía cạnh","Assignment|Nhiệm vụ",
-
-    "Assistance|Sự giúp đỡ","Association|Sự liên kết/Hiệp hội","Assumption|Giả định","Atmosphere|Bầu không khí","Attention|Sự chú ý",
-
-    "Attitude|Thái độ","Audience|Khán giả","Authority|Thẩm quyền","Awareness|Sự nhận thức","Background|Bối cảnh/Nền tảng",
-
-    "Basis|Cơ sở","Beauty|Vẻ đẹp","Beginning|Sự khởi đầu","Behavior|Hành vi","Belief|Niềm tin",
-
-    "Boundary|Ranh giới","Business|Kinh doanh","Capacity|Dung tích/Sức chứa","Category|Hạng mục","Cause|Nguyên nhân",
-
-    "Celebration|Lễ kỷ niệm","Center|Trung tâm","Century|Thế kỷ","Certainty|Sự chắc chắn","Chance|Cơ hội (may rủi)",
-
-    "Change|Sự thay đổi","Chapter|Chương sách","Communicate|Giao tiếp","Community|Cộng đồng","Company|Công ty",
-
-    "Absolute|Tuyệt đối","Academic|Thuộc học thuật","Acceptable|Có thể chấp nhận","Accurate|Chính xác","Active|Năng động",
-
-    "Actual|Thực sự","Additional|Bổ sung","Adequate|Đầy đủ","Administrative|Thuộc hành chính","Appropriate|Phù hợp",
-
-    "Approximate|Xấp xỉ","Automatic|Tự động","Available|Có sẵn","Aware|Có ý thức","Basic|Cơ bản",
-
-    "Beautiful|Xinh đẹp","Beneficial|Có ích","Blind|Mù quáng/Mù","Bold|Táo bạo","Brief|Ngắn gọn",
-
-    "Bright|Tươi sáng","Broad|Rộng lớn","Broken|Vỡ/Hỏng","Busy|Bận rộn","Calm|Bình tĩnh",
-
-    "Capable|Có năng lực","Careful|Cẩn thận","Casual|Bình thường/Thoải mái","Central|Trọng tâm","Certain|Chắc chắn",
-
-    "Cheap|Rẻ","Chemical|Thuộc hóa học","Chief|Chủ yếu/Trưởng","Civil|Thuộc dân sự","Classic|Kinh điển",
-
-    "Clean|Sạch sẽ","Clear|Rõ ràng","Clever|Thông minh/Khéo léo","Clinical|Thuộc lâm sàng","Close|Gần gũi",
-
-    "Cold|Lạnh lẽo","Colorful|Nhiều màu sắc","Comfortable|Thoải mái","Common|Phổ biến","Complex|Phức tạp",
-
-    "Complicated|Rắc rối","Comprehensive|Toàn diện","Confident|Tự tin","Constant|Kiên định/Liên tục","Crucial|Quan trọng",
-
-    "Computer|Máy tính","Screen|Màn hình","Keyboard|Bàn phím","Mouse|Chuột (máy tính)","Internet|Mạng internet",
-
-    "Website|Trang web","Software|Phần mềm","Hardware|Phần cứng","Network|Mạng lưới","Data|Dữ liệu",
-
-    "Information|Thông tin","Document|Tài liệu","Folder|Thư mục","Project|Dự án","Meeting|Cuộc họp",
-
-    "Office|Văn phòng","Manager|Người quản lý","Employee|Nhân viên","Colleague|Đồng nghiệp","Client|Khách hàng (dịch vụ)",
-
-    "Customer|Khách hàng (mua bán)","Product|Sản phẩm","Service|Dịch vụ","Market|Thị trường","Price|Giá cả",
-
-    "Cost|Chi phí","Profit|Lợi nhuận","Investment|Sự đầu tư","Strategy|Chiến lược","Plan|Kế hoạch",
-
-    "Goal|Mục tiêu (ngắn hạn)","Objective|Mục tiêu (dài hạn)","Success|Sự thành công","Failure|Sự thất bại","Report|Bản báo cáo",
-
-    "Presentation|Bài thuyết trình","Experience|Kinh nghiệm","Resume|Sơ yếu lý lịch","Interview|Phỏng vấn","Career|Sự nghiệp",
-
-    "Profession|Nghề nghiệp","Industry|Ngành công nghiệp","Organization|Tổ chức","Department|Phòng ban","Team|Đội/Nhóm",
-
-    "Leader|Người lãnh đạo","Boss|Ông chủ","Meeting|Cuộc họp","Schedule|Lịch trình","Deadline|Hạn chót",
-
-    "Angry|Tức giận","Anxious|Loâu","Bored|Chán nản","Cheerful|Vui tươi","Confused|Bối rối",
-
-    "Curious|Tò mò","Depressed|Trầm cảm/Tuyệt vọng","Disappointed|Thất vọng","Eager|Háo hức","Embarrassed|Xấu hổ",
-
-    "Excited|Phấn khích","Exhausted|Kiệt sức","Fascinated|Bị lôi cuốn","Frustrated|Bực bội","Glad|Vui lòng",
-
-    "Guilty|Có tội/Tội lỗi","Happy|Vui vẻ","Hopeful|Đầy hy vọng","Hostile|Thù địch","Hurt|Tổn thương",
-
-    "Innocent|Ngây thơ/Vô tội","Jealous|Ghen tỵ","Lonely|Cô đơn","Mad|Phát điên/Tức giận","Numb|Tê liệt/Vô cảm",
-
-    "Overwhelmed|Bị choáng ngợp","Peaceful|Bình yên","Pleased|Hài lòng","Proud|Tự hào","Relieved|Nhẹ nhõm",
-
-    "Sad|Buồn bã","Satisfied|Thỏa mãn","Scared|Sợ hãi","Shocked|Sốc","Shy|Nhút nhát",
-
-    "Sorry|Hối tiếc/Xin lỗi","Surprised|Ngạc nhiên","Tense|Căng thẳng","Terrified|Khiếp sợ","Thrilled|Vui sướng/Hồi hộp",
-
-    "Tired|Mệt mỏi","Upset|Buồn phiền","Worried|Lo lắng","Affectionate|Trìu mến","Amused|Thích thú",
-
-    "Animal|Động vật","Bird|Chim","Tree|Cây cối","Flower|Bông hoa","River|Dòng sông",
-
-    "Mountain|Ngọn núi","Ocean|Đại dương","Sea|Biển","Rain|Cơn mưa","Wind|Cơn gió",
-
-    "Snow|Tuyết","Cloud|Đám mây","Sky|Bầu trời","Star|Ngôi sao","Morning|Buổi sáng",
-
-    "Afternoon|Buổi chiều","Evening|Buổi tối","Night|Ban đêm","Week|Tuần","Month|Tháng",
-
-    "Year|Năm","Today|Hôm nay","Tomorrow|Ngày mai","Yesterday|Hôm qua","Always|Luôn luôn",
-
-    "Never|Không bao giờ","Often|Thường xuyên","Sometimes|Đôi khi","Rarely|Hiếm khi","Usually|Thông thường",
-
-    "Early|Sớm","Late|Muộn","Soon|Sớm thôi","Once|Một lần","Twice|Hai lần",
-
-    "Again|Lần nữa","Before|Trước khi","After|Sau khi","During|Trong suốt","While|Trong khi",
-
-    "Bread|Bánh mì","Butter|Bơ","Cheese|Phô mai","Chicken|Thịt gà","Coffee|Cà phê",
-
-    "Dinner|Bữa tối","Fruit|Trái cây","Garlic|Tỏi","Honey|Mật ong","Juice|Nước ép",
-
-    "Kitchen|Nhà bếp","Lemon|Quả chanh","Meat|Thịt","Milk|Sữa","Onion|Hành tây",
-
-    "Orange|Quả cam","Pepper|Hạt tiêu","Potato|Khoai tây","Recipe|Công thức nấu ăn","Rice|Gạo/Cơm",
-
-    "Salad|Rau trộn","Salt|Muối","Sandwich|Bánh mì kẹp","Sauce|Nước sốt","Soup|Món súp",
-
-    "Sugar|Đường (ăn)","Sweet|Ngọt ngào/Kẹo","Tomato|Cà chua","Vegetable|Rau củ","Water|Nước",
-
-    "Window|Cửa sổ","Door|Cửa ra vào","Table|Cái bàn","Chair|Cái ghế","Bed|Cái giường",
-
-    "Affection|Sự yêu thương","Allure|Sức quyến rũ","Angelic|Tựa thiên thần","Beloved|Người yêu dấu","Blossom|Nở rộ",
-
-    "Captivate|Làm say đắm","Charm|Sự duyên dáng","Companion|Người đồng hành","Cuddle|Ôm ấp","Darling|Người thương",
-
-    "Dazzling|Sáng chói/Lộng lẫy","Devotion|Sự tận tâm","Embrace|Cái ôm","Enchant|Bỏ bùa mê","Endear|Làm cho được yêu mến",
-
-    "Eternity|Sự vĩnh cửu","Fancy|Say mê/Thích","Flirt|Tán tỉnh","Fondness|Sự yêu mến","Gentle|Dịu dàng",
-
-    "Heartthrob|Người trong mộng","Infatuate|Làm đắm say","Intimate|Thân mật","Kiss|Nụ hôn","Lovable|Đáng yêu",
-
-    "Lullaby|Khúc hát ru","Magic|Phép màu/Kỳ diệu","Melody|Giai điệu","Muse|Nàng thơ","Passion|Niềm đam mê",
-
-    "Precious|Quý giá","Promise|Lời hứa","Radiant|Rạng rỡ","Romance|Sự lãng mạn","Rose|Hoa hồng",
-
-    "Serenade|Bản tình ca","Soulmate|Bạn tâm giao","Sparkle|Lấp lánh","Stunning|Đẹp sững sờ","Sweetheart|Người yêu",
-
-    "Tender|Mềm mại/Dịu dàng","Treasure|Kho báu/Trân quý","Valentine|Người tình","Whisper|Lời thì thầm","Wonderful|Tuyệt vời",
-
-    "Yearn|Khao khát","Zeal|Sự nhiệt huyết","Mesmerize|Mê hoặc","Breathtaking|Đẹp ngộp thở","Forever|Mãi mãi"
-
-  ];
-
-
+        // Ghi chú: Sau khi chạy thành công lần đầu và data đã lên Firestore, 
+        // bạn có thể làm rỗng mảng RAW_VOCAB này để file HTML nhẹ đi.
+        const RAW_VOCAB = [];
         
-        VOCAB_DB = TEMP_RAW_VOCAB.map(str => {
+        VOCAB_DB = RAW_VOCAB.map(str => {
           let parts = str.split('|');
           return { w: parts[0], m: parts[1] };
         });
@@ -487,7 +294,6 @@
     }
   }
 
-  // Khởi động việc tải từ vựng song song ngay khi trang web vừa mở
   const vocabLoadPromise = loadVocabulary();
 
   // ==========================================
@@ -528,19 +334,33 @@
     };
   }
 
+  // --- HÀM RENDER UI TÁCH RỜI ĐỂ GỌI NHIỀU LẦN ---
+  function showMainAppUI() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.opacity = '1';
+    document.getElementById('mainApp').style.pointerEvents = 'auto';
+    document.getElementById('headerTitle').innerText = state.isCrush ? "Góc của Yến Ngọc" : "Góc Học Tập";
+    updateUI();
+  }
+
   async function save() { 
     if(currentUserDocId && state) {
+      // LƯU VÀO CACHE TRƯỚC
+      localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
+      updateUI(); 
+
+      // ĐỒNG BỘ LÊN FIREBASE NGẦM
       try {
         await setDoc(doc(db, "users", currentUserDocId), state);
-        updateUI(); 
       } catch (e) {
         console.error(e);
-        showToast("Lỗi đồng bộ dữ liệu!");
+        showToast("Lỗi đồng bộ dữ liệu lên cloud!");
       }
     }
   }
 
   function updateUI() {
+    if (!state) return;
     document.getElementById('ui-xp').innerText = state.xp;
     document.getElementById('ui-streak').innerText = state.streak;
     document.getElementById('queueStatus').innerText = state.queue.length > 0 ? `Hôm nay còn: ${state.queue.length} từ` : `Đã hoàn thành!`;
@@ -670,11 +490,18 @@
   };
 
   async function fetchUserData(method) {
-    // Đảm bảo từ vựng đã được lấy xong trước khi setup user
-    await vocabLoadPromise; 
+    // 1. TẢI TỪ CACHE RA SHOW TRƯỚC
+    const cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
+    if (cachedData) {
+      state = JSON.parse(cachedData);
+      showMainAppUI(); 
+    }
 
+    // 2. ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE NGẦM
+    await vocabLoadPromise; 
     const docRef = doc(db, "users", currentUserDocId);
     const docSnap = await getDoc(docRef);
+    
     if (docSnap.exists()) {
       state = docSnap.data();
       if(state.words.length < VOCAB_DB.length) {
@@ -683,17 +510,21 @@
         }
       }
     } else {
-      state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
+      if (!state) state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
       await setDoc(docRef, state);
     }
     
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.opacity = '1';
-    document.getElementById('mainApp').style.pointerEvents = 'auto';
-    document.getElementById('headerTitle').innerText = state.isCrush ? "Góc của Yến Ngọc" : "Góc Học Tập";
+    // Cập nhật lại Cache
+    localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
     
-    initQueue(); setupDailyNotification();
-    showToast(`Chào mừng ${state.userName} quay lại!`);
+    // Render lại UI và khởi chạy
+    showMainAppUI();
+    initQueue(); 
+    setupDailyNotification();
+    
+    if (!cachedData) {
+      showToast(`Chào mừng ${state.userName} quay lại!`);
+    }
   }
 
   document.getElementById('btnGuestLogin').onclick = async () => {
