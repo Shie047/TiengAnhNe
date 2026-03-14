@@ -47,6 +47,7 @@
     .btn.danger { background: rgba(233, 69, 96, 0.3); border: 1px solid var(--accent1); }
     .btn.danger:hover { background: var(--accent1); }
     .btn.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .btn.success { background: var(--success); }
     
     .avatar { 
       width: clamp(80px, 20vw, 100px); height: clamp(80px, 20vw, 100px); border-radius: 50%; margin: 0 auto 15px; 
@@ -155,6 +156,7 @@
     <header class="panel">
       <div class="title" id="headerTitle">Góc Học Tập</div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+        <button class="btn success" id="btnNotify" style="padding: 8px 15px; font-size: 14px; display: none;">Bật thông báo</button>
         <button class="btn warning" id="btnReview" style="padding: 8px 15px; font-size: 14px;">Ôn bài</button>
         <button class="btn primary" id="btnCheckin" style="padding: 8px 15px; font-size: 14px;">Điểm danh</button>
         <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Đăng xuất</button>
@@ -284,12 +286,9 @@
   // ==========================================
   function isAnswerCorrect(userInput, targetAnswer) {
     if (!userInput) return false;
-    
-    // Gộp nhiều khoảng trắng thành 1, xóa toàn bộ dấu câu cơ bản
     let cleanInput = userInput.trim().toLowerCase().replace(/[.!?,;'"]/g, '').replace(/\s+/g, ' ');
     
     let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => {
-      // Xóa phần trong ngoặc (VD: "đường (ăn)" -> "đường")
       let withoutBrackets = s.replace(/\s*\(.*?\)\s*/g, ' ').trim();
       return withoutBrackets.replace(/[.!?,;'"]/g, '').replace(/\s+/g, ' ');
     });
@@ -298,7 +297,7 @@
   }
 
   // ==========================================
-  // HỆ THỐNG DỮ LIỆU TỪ VỰNG TỐI ƯU
+  // HỆ THỐNG DỮ LIỆU TỪ VỰNG TỐI ƯU (Fetch from Firebase Gốc)
   // ==========================================
   let VOCAB_DB = [];
   let isVocabReady = false;
@@ -308,10 +307,7 @@
     
     if (cachedVocab) {
       let parsed = JSON.parse(cachedVocab);
-      if (parsed.length > 0 && parsed[0].exVi === undefined) {
-        localStorage.removeItem('vocab_database');
-        cachedVocab = null; 
-      } else {
+      if (parsed.length > 0 && parsed[0].exVi !== undefined) {
         VOCAB_DB = parsed;
         isVocabReady = true;
         return;
@@ -322,441 +318,17 @@
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
-      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].exVi !== undefined) {
+      if (vocabSnap.exists() && vocabSnap.data().words) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
-        const RAW_VOCAB = [
-          "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.|Máy bay sẽ cất cánh sớm thôi.",
-          "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.|Tôi mong đợi được nghe tin từ bạn.",
-          "Break down|v|Hỏng hóc, Suy sụp|My car broke down on the way to work.|Xe của tôi bị hỏng trên đường đi làm.",
-          "Give up|v|Từ bỏ, Bỏ cuộc|Don't give up on your dreams.|Đừng từ bỏ ước mơ của bạn.",
-          "Figure out|v|Tìm ra, Hiểu ra|We need to figure out a solution.|Chúng ta cần tìm ra một giải pháp.",
-          "Bring up|v|Nuôi dưỡng, Đề cập|She brought up three children.|Cô ấy đã nuôi dưỡng ba đứa trẻ.",
-          "Call off|v|Hủy bỏ|The meeting was called off due to rain.|Cuộc họp đã bị hủy do trời mưa.",
-          "Catch up with|v|Bắt kịp|I need to catch up with my work.|Tôi cần bắt kịp tiến độ công việc.",
-          "Count on|v|Tin cậy, Dựa vào|You can count on me.|Bạn có thể tin cậy vào tôi.",
-          "Put off|v|Trì hoãn|Never put off until tomorrow what you can do today.|Đừng bao giờ trì hoãn đến ngày mai những việc có thể làm hôm nay.",
-          "Accept|v|Chấp nhận|She decided to accept the job offer.|Cô ấy quyết định chấp nhận lời mời làm việc.",
-          "Decision|n|Quyết định|It was a difficult decision to make.|Đó là một quyết định khó khăn.",
-          "Encourage|v|Động viên, Khuyến khích|My parents always encourage me.|Bố mẹ luôn động viên tôi.",
-          "Genuine|adj|Thành thật, Chân thật|She showed a genuine interest in our work.|Cô ấy thể hiện sự quan tâm chân thành đến công việc của chúng tôi.",
-          "Knowledge|n|Kiến thức|Knowledge is power.|Kiến thức là sức mạnh.",
-          "Beautiful|adj|Xinh đẹp, Đẹp|She is a beautiful girl.|Cô ấy là một cô gái xinh đẹp.",
-          "Quickly|adv|Nhanh chóng, Nhanh|He completed the task very quickly.|Anh ấy hoàn thành nhiệm vụ rất nhanh chóng.",
-          "Information|n|Thông tin|I need more information about the project.|Tôi cần thêm thông tin về dự án.",
-          "Wealth|n|Sự giàu có, Của cải|Health is better than wealth.|Sức khỏe quý hơn của cải.",
-          "Destiny|n|Định mệnh, Số phận|You cannot escape your destiny.|Bạn không thể trốn tránh định mệnh của mình.",
-          "Gorgeous|adj|Tuyệt đẹp, Lộng lẫy|You look absolutely gorgeous tonight.|Tối nay bạn trông thực sự lộng lẫy.",
-          "Ethereal|adj|Thanh tao, Siêu phàm|She has an ethereal beauty.|Cô ấy sở hữu một vẻ đẹp thanh tao.",
-          "Breathtaking|adj|Đẹp ngộp thở, Hấp dẫn|The view from the top is breathtaking.|Cảnh nhìn từ trên đỉnh đẹp đến ngộp thở.",
-          "Mesmerize|v|Mê hoặc, Quyến rũ|I was completely mesmerized by the performance.|Tôi đã hoàn toàn bị mê hoặc bởi màn trình diễn.",
-          "Sugar|n|Đường (ăn)|Add some sugar to the coffee.|Thêm chút đường vào cà phê.",
-          "Show up|v|Xuất hiện, Đến|He didn't show up for the meeting.|Anh ấy đã không đến dự cuộc họp.",
-          "Turn out|v|Hóa ra|The movie turned out to be really good.|Bộ phim hóa ra lại rất hay.",
-          "Carry out|v|Tiến hành, Thực hiện|They will carry out a new experiment.|Họ sẽ tiến hành một thí nghiệm mới.",
-          "Set up|v|Thành lập, Thiết lập|She plans to set up her own business.|Cô ấy dự định thành lập công việc kinh doanh riêng.",
-          "Take over|v|Tiếp quản|He will take over the company next month.|Anh ấy sẽ tiếp quản công ty vào tháng tới.",
-          "Look after|v|Chăm sóc|Can you look after my dog this weekend?|Bạn có thể chăm sóc con chó của tôi cuối tuần này không?",
-          "Run out of|v|Cạn kiệt, Hết|We have run out of milk.|Chúng ta đã hết sữa rồi.",
-          "Keep up with|v|Theo kịp|It is hard to keep up with technology.|Thật khó để theo kịp công nghệ.",
-          "Point out|v|Chỉ ra|I would like to point out a mistake.|Tôi muốn chỉ ra một lỗi sai.",
-          "Bring about|v|Mang lại, Gây ra|The internet brought about huge changes.|Internet đã mang lại những thay đổi lớn.",
-          "Accomplish|v|Hoàn thành, Đạt được|We can accomplish anything if we work together.|Chúng ta có thể hoàn thành mọi thứ nếu làm việc cùng nhau.",
-          "Adapt|v|Thích nghi|You must adapt to the new environment.|Bạn phải thích nghi với môi trường mới.",
-          "Colleague|n|Đồng nghiệp|I get along well with my colleagues.|Tôi có quan hệ tốt với các đồng nghiệp.",
-          "Deadline|n|Hạn chót|I have to meet a strict deadline today.|Tôi phải chạy kịp một hạn chót nghiêm ngặt hôm nay.",
-          "Discuss|v|Thảo luận|We need to discuss this issue later.|Chúng ta cần thảo luận vấn đề này sau.",
-          "Evaluate|v|Đánh giá|The teacher will evaluate your performance.|Giáo viên sẽ đánh giá phần thể hiện của bạn.",
-          "Experience|n|Kinh nghiệm, Trải nghiệm|Do you have any experience in sales?|Bạn có kinh nghiệm gì trong việc bán hàng không?",
-          "Implement|v|Thi hành, Thực hiện|The company will implement new rules.|Công ty sẽ thi hành những quy định mới.",
-          "Organize|v|Sắp xếp, Tổ chức|I need to organize my desk.|Tôi cần sắp xếp lại bàn làm việc của mình.",
-          "Presentation|n|Bài thuyết trình|Her presentation was very impressive.|Bài thuyết trình của cô ấy rất ấn tượng.",
-          "Strategy|n|Chiến lược|We need a better marketing strategy.|Chúng ta cần một chiến lược tiếp thị tốt hơn.",
-          "Promote|v|Thăng chức, Thúc đẩy|He was promoted to manager last year.|Anh ấy được thăng chức làm quản lý vào năm ngoái.",
-          "Requirement|n|Yêu cầu|A degree is a requirement for this job.|Bằng cấp là một yêu cầu cho công việc này.",
-          "Succeed|v|Thành công|You will succeed if you try hard.|Bạn sẽ thành công nếu bạn cố gắng hết sức.",
-          "Analyze|v|Phân tích|We need to analyze the data carefully.|Chúng ta cần phân tích dữ liệu một cách cẩn thận.",
-          "Anxious|adj|Lo âu, Bồn chồn|She felt anxious before the exam.|Cô ấy cảm thấy lo âu trước kỳ thi.",
-          "Brave|adj|Dũng cảm|It was brave of you to speak the truth.|Thật dũng cảm khi bạn nói ra sự thật.",
-          "Cheerful|adj|Vui vẻ, Hớn hở|He is always cheerful and positive.|Anh ấy luôn vui vẻ và tích cực.",
-          "Confident|adj|Tự tin|I am confident in my abilities.|Tôi tự tin vào khả năng của mình.",
-          "Curious|adj|Tò mò|Children are naturally curious about the world.|Trẻ em vốn dĩ tò mò về thế giới xung quanh.",
-          "Depressed|adj|Trầm cảm, Buồn chán|She felt depressed after losing her job.|Cô ấy cảm thấy buồn chán sau khi mất việc.",
-          "Eager|adj|Háo hức|I am eager to learn new things.|Tôi rất háo hức học hỏi những điều mới.",
-          "Embarrassed|adj|Xấu hổ, Lúng túng|He was embarrassed by his mistake.|Anh ấy cảm thấy xấu hổ vì lỗi lầm của mình.",
-          "Enthusiastic|adj|Nhiệt tình|The team is very enthusiastic about the project.|Nhóm rất nhiệt tình với dự án.",
-          "Fascinated|adj|Bị lôi cuốn, Mê mẩn|I am fascinated by space exploration.|Tôi bị lôi cuốn bởi việc khám phá vũ trụ.",
-          "Generous|adj|Hào phóng|Thank you for your generous donation.|Cảm ơn vì sự quyên góp hào phóng của bạn.",
-          "Honest|adj|Trung thực|To be honest, I don't like this idea.|Thành thật mà nói, tôi không thích ý tưởng này.",
-          "Jealous|adj|Ghen tị|Don't be jealous of her success.|Đừng ghen tị với thành công của cô ấy.",
-          "Nervous|adj|Căng thẳng, Lo lắng|I always get nervous before flying.|Tôi luôn thấy căng thẳng trước khi đi máy bay.",
-          "Patient|adj|Kiên nhẫn|You need to be patient with children.|Bạn cần phải kiên nhẫn với trẻ em.",
-          "Proud|adj|Tự hào|My parents are very proud of me.|Bố mẹ tôi rất tự hào về tôi.",
-          "Reliable|adj|Đáng tin cậy|He is a very reliable friend.|Anh ấy là một người bạn rất đáng tin cậy.",
-          "Selfish|adj|Ích kỷ|It is selfish to keep it all to yourself.|Thật ích kỷ khi giữ tất cả cho riêng mình.",
-          "Shy|adj|Nhút nhát, Rụt rè|She was too shy to ask a question.|Cô ấy quá rụt rè để đặt câu hỏi.",
-          "Stubborn|adj|Bướng bỉnh, Cố chấp|He is too stubborn to admit he is wrong.|Anh ta quá cố chấp để thừa nhận mình sai.",
-          "Appliance|n|Thiết bị, Dụng cụ|We sell household appliances like washing machines.|Chúng tôi bán các thiết bị gia dụng như máy giặt.",
-          "Atmosphere|n|Bầu không khí|The restaurant has a cozy atmosphere.|Nhà hàng có một bầu không khí ấm cúng.",
-          "Beverage|n|Đồ uống|What is your favorite beverage?|Đồ uống yêu thích của bạn là gì?",
-          "Blanket|n|Cái chăn, Mền|I need an extra blanket because it's cold.|Tôi cần thêm một cái chăn vì trời lạnh.",
-          "Breathe|v|Hít thở|Breathe deeply and relax.|Hãy hít thở sâu và thư giãn.",
-          "Celebrate|v|Ăn mừng, Kỷ niệm|We will celebrate her birthday tomorrow.|Chúng tôi sẽ ăn mừng sinh nhật cô ấy vào ngày mai.",
-          "Communicate|v|Giao tiếp|We communicate mostly by email.|Chúng tôi giao tiếp chủ yếu qua email.",
-          "Community|n|Cộng đồng|He is a respected member of the community.|Ông ấy là một thành viên được tôn trọng trong cộng đồng.",
-          "Complain|v|Phàn nàn|Customers often complain about the slow service.|Khách hàng thường phàn nàn về dịch vụ chậm chạp.",
-          "Convenient|adj|Tiện lợi|This location is very convenient for shopping.|Vị trí này rất tiện lợi cho việc mua sắm.",
-          "Cushion|n|Cái đệm|She put a cushion on the chair.|Cô ấy đặt một cái đệm lên ghế.",
-          "Daily|adv|Hàng ngày|I read the news on a daily basis.|Tôi đọc tin tức hàng ngày.",
-          "Delicious|adj|Thơm ngon|This soup is incredibly delicious.|Món súp này thật sự rất ngon.",
-          "Environment|n|Môi trường|We must protect the natural environment.|Chúng ta phải bảo vệ môi trường tự nhiên.",
-          "Familiar|adj|Quen thuộc|This song sounds very familiar.|Bài hát này nghe rất quen thuộc.",
-          "Furniture|n|Đồ nội thất|They bought new furniture for their house.|Họ đã mua đồ nội thất mới cho căn nhà.",
-          "Grocery|n|Tạp hóa|I need to go to the grocery store.|Tôi cần đi đến cửa hàng tạp hóa.",
-          "Habit|n|Thói quen|Smoking is a bad habit.|Hút thuốc là một thói quen xấu.",
-          "Improve|v|Cải thiện|I want to improve my English skills.|Tôi muốn cải thiện kỹ năng tiếng Anh của mình.",
-          "Journey|n|Hành trình, Chuyến đi|Life is a journey, not a destination.|Cuộc sống là một hành trình, không phải một đích đến.",
-          "Neighborhood|n|Khu vực lân cận, Hàng xóm|We live in a quiet neighborhood.|Chúng tôi sống trong một khu dân cư yên tĩnh.",
-          "Nutritious|adj|Bổ dưỡng|Vegetables are highly nutritious.|Rau củ rất bổ dưỡng.",
-          "Prepare|v|Chuẩn bị|I need to prepare dinner for my family.|Tôi cần chuẩn bị bữa tối cho gia đình.",
-          "Relax|v|Thư giãn|Listen to some music and relax.|Hãy nghe chút nhạc và thư giãn.",
-          "Routine|n|Thói quen hàng ngày, Lịch trình|My morning routine includes jogging.|Lịch trình buổi sáng của tôi bao gồm việc chạy bộ.",
-          "Vehicle|n|Phương tiện|Are you the driver of this vehicle?|Bạn có phải là tài xế của phương tiện này không?",
-          "Abandon|v|Từ bỏ|They had to abandon the sinking ship.|Họ phải từ bỏ con tàu đang chìm.",
-          "Achieve|v|Đạt được|He worked hard to achieve his goals.|Anh ấy đã làm việc chăm chỉ để đạt được mục tiêu.",
-          "Admire|v|Ngưỡng mộ|I really admire your courage.|Tôi thực sự ngưỡng mộ lòng can đảm của bạn.",
-          "Allow|v|Cho phép|Smoking is not allowed here.|Việc hút thuốc không được cho phép ở đây.",
-          "Announce|v|Thông báo|The principal will announce the results today.|Hiệu trưởng sẽ thông báo kết quả vào hôm nay.",
-          "Apologize|v|Xin lỗi|I want to apologize for my mistake.|Tôi muốn xin lỗi vì sai lầm của mình.",
-          "Argue|v|Tranh luận, Cãi nhau|They always argue about money.|Họ luôn cãi nhau về chuyện tiền bạc.",
-          "Assume|v|Giả định, Cho rằng|I assume you are telling the truth.|Tôi cho rằng bạn đang nói sự thật.",
-          "Attempt|v|Cố gắng, Nỗ lực|He will attempt to break the world record.|Anh ấy sẽ cố gắng phá kỷ lục thế giới.",
-          "Attract|v|Thu hút|Flowers attract bees.|Hoa thu hút những con ong.",
-          "Avoid|v|Tránh, Lảng tránh|You should avoid eating too much sugar.|Bạn nên tránh ăn quá nhiều đường.",
-          "Blame|v|Đổ lỗi|Don't blame me for your problems.|Đừng đổ lỗi cho tôi về những vấn đề của bạn.",
-          "Borrow|v|Mượn|Can I borrow your pen for a second?|Tôi có thể mượn bút của bạn một lát không?",
-          "Bother|v|Làm phiền|Sorry to bother you, but I need help.|Xin lỗi vì đã làm phiền bạn, nhưng tôi cần giúp đỡ.",
-          "Calculate|v|Tính toán|Please calculate the total cost.|Hãy tính toán tổng chi phí.",
-          "Compare|v|So sánh|You shouldn't compare yourself to others.|Bạn không nên so sánh bản thân với người khác.",
-          "Confess|v|Thú nhận|He confessed to stealing the money.|Anh ta đã thú nhận việc ăn cắp tiền.",
-          "Confirm|v|Xác nhận|Please confirm your password.|Vui lòng xác nhận mật khẩu của bạn.",
-          "Convince|v|Thuyết phục|I tried to convince her to stay.|Tôi đã cố gắng thuyết phục cô ấy ở lại.",
-          "Criticize|v|Chỉ trích|It is easy to criticize others.|Thật dễ dàng để chỉ trích người khác.",
-          "Declare|v|Tuyên bố|They declared war on the enemy.|Họ đã tuyên bố chiến tranh với kẻ thù.",
-          "Defend|v|Bảo vệ, Phòng thủ|We must defend our country.|Chúng ta phải bảo vệ đất nước của mình.",
-          "Deliver|v|Giao hàng, Truyền đạt|The postman will deliver the package tomorrow.|Người đưa thư sẽ giao gói hàng vào ngày mai.",
-          "Deny|v|Phủ nhận|He denied knowing anything about it.|Anh ta phủ nhận việc biết bất cứ điều gì về nó.",
-          "Describe|v|Miêu tả|Can you describe the man you saw?|Bạn có thể miêu tả người đàn ông bạn đã thấy không?",
-          "Deserve|v|Xứng đáng|You worked hard, so you deserve a break.|Bạn đã làm việc chăm chỉ, vì vậy bạn xứng đáng được nghỉ ngơi.",
-          "Destroy|v|Phá hủy|The storm destroyed many houses.|Cơn bão đã phá hủy nhiều ngôi nhà.",
-          "Determine|v|Xác định, Quyết tâm|We need to determine the cause of the problem.|Chúng ta cần xác định nguyên nhân của vấn đề.",
-          "Discover|v|Khám phá, Tìm ra|Columbus discovered America in 1492.|Columbus đã khám phá ra châu Mỹ vào năm 1492.",
-          "Divide|v|Chia, Phân chia|Let's divide the pizza into four slices.|Hãy chia chiếc bánh pizza thành bốn lát.",
-          "Doubt|v|Nghi ngờ|I doubt that he will come.|Tôi nghi ngờ rằng anh ấy sẽ đến.",
-          "Earn|v|Kiếm được|She earns a lot of money as a doctor.|Cô ấy kiếm được nhiều tiền với vai trò là bác sĩ.",
-          "Estimate|v|Ước tính|They estimate the cost to be around $500.|Họ ước tính chi phí vào khoảng 500 đô la.",
-          "Expand|v|Mở rộng|Water expands when it freezes.|Nước giãn nở khi nó đóng băng.",
-          "Expect|v|Kỳ vọng, Mong đợi|I expect you to be on time.|Tôi kỳ vọng bạn sẽ đến đúng giờ.",
-          "Explain|v|Giải thích|Can you explain this rule to me?|Bạn có thể giải thích quy tắc này cho tôi không?",
-          "Express|v|Bày tỏ, Biểu đạt|Music is a way to express emotions.|Âm nhạc là một cách để bày tỏ cảm xúc.",
-          "Forgive|v|Tha thứ|I hope you can forgive me.|Tôi hy vọng bạn có thể tha thứ cho tôi.",
-          "Generate|v|Tạo ra, Phát ra|Wind turbines generate electricity.|Tua-bin gió tạo ra điện.",
-          "Guess|v|Đoán|Can you guess my age?|Bạn có thể đoán tuổi của tôi không?",
-          "Handle|v|Xử lý, Giải quyết|He knows how to handle difficult customers.|Anh ấy biết cách xử lý những khách hàng khó tính.",
-          "Hesitate|v|Do dự, Ngập ngừng|Don't hesitate to contact me if you need help.|Đừng ngập ngừng liên hệ với tôi nếu bạn cần giúp đỡ.",
-          "Identify|v|Nhận dạng, Xác định|She was able to identify the thief.|Cô ấy đã có thể nhận dạng được tên trộm.",
-          "Ignore|v|Phớt lờ, Bỏ qua|You shouldn't ignore your health problems.|Bạn không nên bỏ qua những vấn đề sức khỏe của mình.",
-          "Imagine|v|Tưởng tượng|Imagine a world without war.|Hãy tưởng tượng một thế giới không có chiến tranh.",
-          "Impress|v|Gây ấn tượng|He tried to impress her with his skills.|Anh ấy cố gắng gây ấn tượng với cô ấy bằng kỹ năng của mình.",
-          "Include|v|Bao gồm|The price includes tax and breakfast.|Giá cả đã bao gồm thuế và bữa sáng.",
-          "Indicate|v|Chỉ ra, Biểu thị|The map indicates the best route.|Bản đồ chỉ ra tuyến đường tốt nhất.",
-          "Influence|v|Ảnh hưởng|Parents have a strong influence on their children.|Cha mẹ có ảnh hưởng mạnh mẽ đến con cái của họ.",
-          "Inform|v|Thông báo, Báo tin|Please inform us if you change your address.|Vui lòng thông báo cho chúng tôi nếu bạn đổi địa chỉ.",
-          "Involve|v|Bao gồm, Liên quan|The project involves a lot of research.|Dự án này bao gồm rất nhiều việc nghiên cứu.",
-          "Justify|v|Biện minh, Biện hộ|You don't need to justify your decision to me.|Bạn không cần phải biện minh cho quyết định của mình với tôi.",
-          "Maintain|v|Duy trì|It is important to maintain a healthy diet.|Việc duy trì chế độ ăn uống lành mạnh là rất quan trọng.",
-          "Mention|v|Đề cập|Did she mention my name?|Cô ấy có đề cập đến tên tôi không?",
-          "Notice|v|Chú ý, Nhận thấy|I didn't notice you were there.|Tôi đã không nhận thấy bạn ở đó.",
-          "Observe|v|Quan sát|Scientists observe the behavior of animals.|Các nhà khoa học quan sát hành vi của động vật.",
-          "Occur|v|Xảy ra, Xảy đến|The accident occurred late at night.|Vụ tai nạn đã xảy ra vào đêm muộn.",
-          "Overcome|v|Vượt qua|She managed to overcome her fear of heights.|Cô ấy đã xoay sở để vượt qua chứng sợ độ cao.",
-          "Participate|v|Tham gia|Everyone is encouraged to participate in the event.|Mọi người được khuyến khích tham gia vào sự kiện.",
-          "Persuade|v|Thuyết phục|Can you persuade him to change his mind?|Bạn có thể thuyết phục anh ấy thay đổi quyết định không?",
-          "Predict|v|Dự đoán|It is hard to predict the weather accurately.|Rất khó để dự đoán thời tiết chính xác.",
-          "Prevent|v|Ngăn ngừa, Ngăn chặn|Vitamin C helps prevent colds.|Vitamin C giúp ngăn ngừa cảm lạnh.",
-          "Protect|v|Bảo vệ|Wear sunglasses to protect your eyes.|Đeo kính râm để bảo vệ mắt của bạn.",
-          "Provide|v|Cung cấp|The hotel provides fresh towels every day.|Khách sạn cung cấp khăn tắm sạch mỗi ngày.",
-          "Realize|v|Nhận ra|I suddenly realized I had lost my keys.|Tôi đột nhiên nhận ra mình đã mất chìa khóa.",
-          "Recognize|v|Nhận ra, Nhận diện|I didn't recognize her with short hair.|Tôi đã không nhận ra cô ấy với mái tóc ngắn.",
-          "Reflect|v|Phản chiếu, Phản ánh|The water reflects the sunlight.|Mặt nước phản chiếu ánh sáng mặt trời.",
-          "Refuse|v|Từ chối|She refused to answer the question.|Cô ấy đã từ chối trả lời câu hỏi.",
-          "Regret|v|Hối hận, Tiếc nuối|I deeply regret my actions.|Tôi vô cùng hối hận về hành động của mình.",
-          "Replace|v|Thay thế|We need to replace the broken window.|Chúng ta cần thay thế cửa sổ bị vỡ.",
-          "Represent|v|Đại diện|This statue represents freedom.|Bức tượng này đại diện cho sự tự do.",
-          "Require|v|Yêu cầu, Đòi hỏi|This plant requires a lot of sunlight.|Cây này đòi hỏi rất nhiều ánh sáng mặt trời.",
-          "Respect|v|Tôn trọng|You must respect the elderly.|Bạn phải tôn trọng người cao tuổi.",
-          "Respond|v|Phản hồi, Trả lời|She didn't respond to my message.|Cô ấy không phản hồi tin nhắn của tôi.",
-          "Reveal|v|Tiết lộ|He refused to reveal the secret.|Anh ta từ chối tiết lộ bí mật.",
-          "Review|v|Ôn tập, Đánh giá|Let's review the lesson before the test.|Hãy ôn tập bài học trước khi kiểm tra.",
-          "Solve|v|Giải quyết|We must work together to solve this issue.|Chúng ta phải làm việc cùng nhau để giải quyết vấn đề này.",
-          "Suggest|v|Gợi ý, Đề nghị|I suggest we leave early to avoid traffic.|Tôi đề nghị chúng ta nên đi sớm để tránh tắc đường.",
-          "Support|v|Ủng hộ, Hỗ trợ|My family always supports my dreams.|Gia đình luôn ủng hộ những giấc mơ của tôi.",
-          "Survive|v|Sống sót, Tồn tại|Camels can survive for weeks without water.|Lạc đà có thể sống sót nhiều tuần mà không cần nước.",
-          "Threaten|v|Đe dọa|The man threatened to call the police.|Người đàn ông đã đe dọa sẽ gọi cảnh sát.",
-          "Translate|v|Dịch, Phiên dịch|Can you translate this sentence into Vietnamese?|Bạn có thể dịch câu này sang tiếng Việt không?",
-          "Verify|v|Xác minh, Kiểm chứng|We need to verify his identity.|Chúng ta cần xác minh danh tính của anh ta.",
-          "Ability|n|Khả năng|He has a natural ability for music.|Anh ấy có khả năng thiên bẩm về âm nhạc.",
-          "Access|n|Quyền truy cập|You need a password to get access.|Bạn cần mật khẩu để có quyền truy cập.",
-          "Advantage|n|Lợi thế|Knowing English is a big advantage.|Biết tiếng Anh là một lợi thế lớn.",
-          "Agreement|n|Hiệp định, Sự đồng ý|They finally reached an agreement.|Cuối cùng họ đã đạt được một sự đồng ý.",
-          "Alternative|n|Sự thay thế, Lựa chọn khác|We have no alternative but to wait.|Chúng ta không có lựa chọn nào khác ngoài việc chờ đợi.",
-          "Benefit|n|Lợi ích|There are many health benefits of doing yoga.|Có rất nhiều lợi ích sức khỏe từ việc tập yoga.",
-          "Candidate|n|Ứng cử viên|He is the best candidate for the job.|Anh ấy là ứng cử viên tốt nhất cho công việc.",
-          "Category|n|Hạng mục, Thể loại|This book falls into the category of fiction.|Cuốn sách này thuộc thể loại viễn tưởng.",
-          "Challenge|n|Thử thách|Climbing that mountain is a huge challenge.|Việc leo ngọn núi đó là một thử thách lớn.",
-          "Character|n|Nhân vật, Tính cách|He is a main character in the novel.|Anh ấy là một nhân vật chính trong tiểu thuyết.",
-          "Circumstance|n|Hoàn cảnh, Tình huống|I can't work under these circumstances.|Tôi không thể làm việc dưới những hoàn cảnh này.",
-          "Combination|n|Sự kết hợp|Pink is a combination of red and white.|Màu hồng là sự kết hợp giữa đỏ và trắng.",
-          "Committee|n|Ủy ban|The committee will decide tomorrow.|Ủy ban sẽ quyết định vào ngày mai.",
-          "Concept|n|Khái niệm|It is a difficult concept to understand.|Đó là một khái niệm khó hiểu.",
-          "Conflict|n|Xung đột, Cuộc chiến|We must avoid armed conflict.|Chúng ta phải tránh xung đột vũ trang.",
-          "Consequence|n|Hậu quả|You must face the consequences of your actions.|Bạn phải đối mặt với hậu quả từ hành động của mình.",
-          "Culture|n|Văn hóa|Japan has a rich traditional culture.|Nhật Bản có một nền văn hóa truyền thống phong phú.",
-          "Decade|n|Thập kỷ|Technology has changed a lot in the last decade.|Công nghệ đã thay đổi rất nhiều trong thập kỷ qua.",
-          "Department|n|Phòng ban, Bộ phận|She works in the sales department.|Cô ấy làm việc ở bộ phận bán hàng.",
-          "Device|n|Thiết bị|A smartphone is a very useful device.|Điện thoại thông minh là một thiết bị rất hữu ích.",
-          "Disease|n|Căn bệnh|Heart disease is very common today.|Bệnh tim rất phổ biến hiện nay.",
-          "Distance|n|Khoảng cách|The distance between the two cities is 100 miles.|Khoảng cách giữa hai thành phố là 100 dặm.",
-          "Document|n|Tài liệu|Please print this document for me.|Vui lòng in tài liệu này giúp tôi.",
-          "Economy|n|Nền kinh tế|The country's economy is growing fast.|Nền kinh tế của đất nước đang phát triển nhanh.",
-          "Effort|n|Sự nỗ lực|You must put more effort into your study.|Bạn phải đặt nhiều nỗ lực hơn vào việc học.",
-          "Election|n|Cuộc bầu cử|The presidential election is next week.|Cuộc bầu cử tổng thống diễn ra vào tuần tới.",
-          "Energy|n|Năng lượng|Solar power is a clean source of energy.|Năng lượng mặt trời là nguồn năng lượng sạch.",
-          "Equipment|n|Thiết bị, Dụng cụ|We need some new office equipment.|Chúng tôi cần một số thiết bị văn phòng mới.",
-          "Evidence|n|Bằng chứng|There is no evidence to support his claim.|Không có bằng chứng nào ủng hộ cho lời tuyên bố của anh ta.",
-          "Feature|n|Đặc điểm, Tính năng|This car has many safety features.|Chiếc xe này có nhiều tính năng an toàn.",
-          "Generation|n|Thế hệ|The younger generation loves social media.|Thế hệ trẻ yêu thích mạng xã hội.",
-          "Government|n|Chính phủ|The government plans to lower taxes.|Chính phủ dự định sẽ giảm thuế.",
-          "Guarantee|n|Sự đảm bảo, Giấy bảo hành|The TV comes with a two-year guarantee.|Chiếc TV đi kèm với giấy bảo hành 2 năm.",
-          "Identity|n|Danh tính|The police are trying to discover the victim's identity.|Cảnh sát đang cố gắng khám phá danh tính nạn nhân.",
-          "Impact|n|Sự tác động, Ảnh hưởng|Climate change has a huge impact on nature.|Biến đổi khí hậu có sự tác động lớn đến tự nhiên.",
-          "Independent|adj|Độc lập|She is a strong, independent woman.|Cô ấy là một người phụ nữ mạnh mẽ và độc lập.",
-          "Industry|n|Ngành công nghiệp|The tourism industry has suffered recently.|Ngành công nghiệp du lịch đã chịu thiệt hại gần đây.",
-          "Infection|n|Sự lây nhiễm, Bệnh nhiễm trùng|Wash your hands to prevent infection.|Rửa tay để phòng ngừa sự lây nhiễm.",
-          "Ingredient|n|Thành phần, Nguyên liệu|Coconut is a key ingredient in this dish.|Dừa là nguyên liệu chính trong món ăn này.",
-          "Invention|n|Sự phát minh|The telephone is a brilliant invention.|Điện thoại là một sự phát minh xuất sắc.",
-          "Investment|n|Sự đầu tư|Buying a house is a good investment.|Mua một ngôi nhà là một sự đầu tư tốt.",
-          "Language|n|Ngôn ngữ|English is an international language.|Tiếng Anh là một ngôn ngữ quốc tế.",
-          "Majority|n|Phần lớn, Đa số|The majority of students passed the exam.|Đa số học sinh đã vượt qua kỳ thi.",
-          "Material|n|Vật liệu, Chất liệu|This shirt is made of soft material.|Chiếc áo này được làm từ chất liệu mềm mại.",
-          "Method|n|Phương pháp|We need to find a new teaching method.|Chúng ta cần tìm một phương pháp giảng dạy mới.",
-          "Network|n|Mạng lưới|We have a vast network of computers.|Chúng tôi có một mạng lưới máy tính rộng lớn.",
-          "Opportunity|n|Cơ hội|Don't miss this golden opportunity.|Đừng bỏ lỡ cơ hội vàng này.",
-          "Option|n|Sự lựa chọn, Tùy chọn|We have several options to consider.|Chúng ta có một vài lựa chọn để cân nhắc.",
-          "Particle|n|Hạt, Phần tử|Dust particles float in the air.|Những hạt bụi lơ lửng trong không khí.",
-          "Passenger|n|Hành khách|The train carries over 500 passengers.|Chuyến tàu chở hơn 500 hành khách.",
-          "Patience|n|Sự kiên nhẫn|Teaching requires a lot of patience.|Việc giảng dạy đòi hỏi rất nhiều sự kiên nhẫn.",
-          "Policy|n|Chính sách|The company has a strict no-smoking policy.|Công ty có chính sách cấm hút thuốc nghiêm ngặt.",
-          "Pollution|n|Sự ô nhiễm|Air pollution is a major problem in big cities.|Ô nhiễm không khí là một vấn đề lớn ở các thành phố lớn.",
-          "Population|n|Dân số|The population of Tokyo is huge.|Dân số của Tokyo rất khổng lồ.",
-          "Pressure|n|Áp lực|He is under a lot of pressure at work.|Anh ấy đang chịu rất nhiều áp lực tại nơi làm việc.",
-          "Priority|n|Sự ưu tiên|Safety is our top priority.|An toàn là sự ưu tiên hàng đầu của chúng tôi.",
-          "Procedure|n|Thủ tục, Quy trình|Please follow the normal safety procedure.|Vui lòng làm theo quy trình an toàn thông thường.",
-          "Property|n|Tài sản, Bất động sản|He owns a lot of property in the city.|Ông ấy sở hữu rất nhiều bất động sản trong thành phố.",
-          "Purpose|n|Mục đích|What is the main purpose of your visit?|Mục đích chính của chuyến thăm của bạn là gì?",
-          "Quality|n|Chất lượng|We always aim for high quality.|Chúng tôi luôn hướng tới chất lượng cao.",
-          "Quantity|n|Số lượng|Quality is more important than quantity.|Chất lượng quan trọng hơn số lượng.",
-          "Reaction|n|Phản ứng|What was her reaction to the news?|Phản ứng của cô ấy với tin tức đó là gì?",
-          "Recipe|n|Công thức (nấu ăn)|Can you give me the recipe for this cake?|Bạn có thể cho tôi công thức làm cái bánh này không?",
-          "Relation|n|Mối quan hệ, Sự liên quan|There is a clear relation between smoking and cancer.|Có một sự liên quan rõ ràng giữa việc hút thuốc và ung thư.",
-          "Resource|n|Nguồn tài nguyên|Water is a precious natural resource.|Nước là một nguồn tài nguyên thiên nhiên quý giá.",
-          "Response|n|Sự phản hồi, Lời đáp|I am still waiting for a response.|Tôi vẫn đang chờ một sự phản hồi.",
-          "Security|n|Sự an ninh, Bảo vệ|Airport security is very tight today.|An ninh sân bay hôm nay rất thắt chặt.",
-          "Signature|n|Chữ ký|Please put your signature at the bottom.|Vui lòng đặt chữ ký của bạn ở dưới cùng.",
-          "Solution|n|Giải pháp|There is no easy solution to this problem.|Không có giải pháp nào dễ dàng cho vấn đề này.",
-          "Source|n|Nguồn, Nguồn gốc|Oranges are an excellent source of vitamin C.|Cam là một nguồn cung cấp vitamin C tuyệt vời.",
-          "Species|n|Loài (sinh học)|Many species of birds are in danger.|Nhiều loài chim đang gặp nguy hiểm.",
-          "Standard|n|Tiêu chuẩn|This work is not up to our standard.|Tác phẩm này không đạt tiêu chuẩn của chúng tôi.",
-          "Substance|n|Chất, Vật chất|Ice is a solid substance.|Đá là một chất rắn.",
-          "Symbol|n|Biểu tượng|The dove is a symbol of peace.|Chim bồ câu là biểu tượng của hòa bình.",
-          "Symptom|n|Triệu chứng|Fever is a symptom of many illnesses.|Sốt là triệu chứng của nhiều căn bệnh.",
-          "Target|n|Mục tiêu, Đích nhắm|Our sales target for this month is 100 units.|Mục tiêu doanh số của chúng ta tháng này là 100 đơn vị.",
-          "Theory|n|Lý thuyết|In theory, this should work perfectly.|Về lý thuyết, điều này sẽ hoạt động hoàn hảo.",
-          "Threat|n|Mối đe dọa|Drunk drivers are a threat to everyone.|Những tài xế say xỉn là mối đe dọa với tất cả mọi người.",
-          "Tradition|n|Truyền thống|It is a tradition to eat turkey on Thanksgiving.|Ăn gà tây vào Lễ Tạ ơn là một truyền thống.",
-          "Treatment|n|Sự điều trị, Phép trị liệu|He is receiving treatment for cancer.|Ông ấy đang được điều trị bệnh ung thư.",
-          "Variety|n|Sự đa dạng|The store offers a wide variety of shoes.|Cửa hàng cung cấp một sự đa dạng lớn các loại giày.",
-          "Vehicle|n|Phương tiện|Cars, buses, and trucks are motor vehicles.|Ô tô, xe buýt và xe tải là những phương tiện cơ giới.",
-          "Victim|n|Nạn nhân|The police are trying to identify the victim.|Cảnh sát đang cố gắng nhận dạng nạn nhân.",
-          "Victory|n|Chiến thắng|The team celebrated a great victory.|Đội bóng đã ăn mừng một chiến thắng tuyệt vời.",
-          "Vision|n|Tầm nhìn, Thị lực|Tears blurred her vision.|Nước mắt làm mờ đi tầm nhìn của cô ấy.",
-          "Warning|n|Cảnh báo|The government issued a tsunami warning.|Chính phủ đã ban hành một cảnh báo sóng thần.",
-          "Weapon|n|Vũ khí|The police found the murder weapon.|Cảnh sát đã tìm thấy hung khí giết người.",
-          "Wisdom|n|Sự khôn ngoan, Trí tuệ|Wisdom comes with age and experience.|Sự khôn ngoan đến cùng với tuổi tác và kinh nghiệm.",
-          "Youth|n|Tuổi trẻ, Thanh xuân|He was a famous athlete in his youth.|Ông ấy từng là một vận động viên nổi tiếng trong thời kỳ tuổi trẻ.",
-          "Accurate|adj|Chính xác|Is this translation accurate?|Bản dịch này có chính xác không?",
-          "Appropriate|adj|Phù hợp, Thích hợp|Jeans are not appropriate for a formal wedding.|Quần jeans không thích hợp cho một đám cưới trang trọng.",
-          "Available|adj|Có sẵn|Are there any tickets available for tonight?|Có còn vé nào có sẵn cho tối nay không?",
-          "Awful|adj|Tồi tệ, Khủng khiếp|The weather today is absolutely awful.|Thời tiết hôm nay thật sự tồi tệ.",
-          "Basic|adj|Cơ bản|You need some basic computer skills.|Bạn cần một số kỹ năng máy tính cơ bản.",
-          "Brilliant|adj|Xuất sắc, Rực rỡ|Einstein had a brilliant mind.|Einstein có một trí tuệ xuất sắc.",
-          "Careful|adj|Cẩn thận|Be careful when crossing the street.|Hãy cẩn thận khi băng qua đường.",
-          "Certain|adj|Chắc chắn|I am certain that he will agree.|Tôi chắc chắn rằng anh ấy sẽ đồng ý.",
-          "Complex|adj|Phức tạp|The human brain is a complex organ.|Bộ não con người là một cơ quan phức tạp.",
-          "Crucial|adj|Cốt yếu, Rất quan trọng|Water is crucial for survival.|Nước là rất quan trọng để sinh tồn.",
-          "Dangerous|adj|Nguy hiểm|It is dangerous to drive so fast.|Lái xe nhanh như vậy rất nguy hiểm.",
-          "Different|adj|Khác biệt|My brother and I are very different.|Anh trai và tôi rất khác biệt.",
-          "Difficult|adj|Khó khăn|This math problem is too difficult.|Bài toán này quá khó.",
-          "Direct|adj|Trực tiếp|Is there a direct flight to Paris?|Có chuyến bay trực tiếp nào đến Paris không?",
-          "Effective|adj|Hiệu quả|We need an effective plan to reduce costs.|Chúng ta cần một kế hoạch hiệu quả để giảm chi phí.",
-          "Empty|adj|Trống rỗng|The room was completely empty.|Căn phòng hoàn toàn trống rỗng.",
-          "Essential|adj|Thiết yếu|Vitamins are essential for good health.|Vitamin là thiết yếu cho sức khỏe tốt.",
-          "Exact|adj|Chính xác (tuyệt đối)|What is the exact size of the box?|Kích thước chính xác của cái hộp là bao nhiêu?",
-          "Excellent|adj|Xuất sắc|She is an excellent piano player.|Cô ấy là một người chơi piano xuất sắc.",
-          "Expensive|adj|Đắt tiền|That diamond ring is too expensive.|Chiếc nhẫn kim cương đó quá đắt tiền.",
-          "Familiar|adj|Quen thuộc|His face looks familiar to me.|Khuôn mặt của anh ấy trông có vẻ quen thuộc với tôi.",
-          "Famous|adj|Nổi tiếng|He is a famous Hollywood actor.|Anh ấy là một diễn viên Hollywood nổi tiếng.",
-          "Frequent|adj|Thường xuyên|He is a frequent visitor to the library.|Anh ấy là một vị khách thường xuyên của thư viện.",
-          "Friendly|adj|Thân thiện|The local people are very friendly.|Người dân địa phương rất thân thiện.",
-          "Fundamental|adj|Cơ bản, Nền tảng|Freedom of speech is a fundamental right.|Tự do ngôn luận là một quyền cơ bản.",
-          "Guilty|adj|Có tội, Tội lỗi|The jury found him guilty of murder.|Bồi thẩm đoàn đã tuyên anh ta có tội giết người.",
-          "Heavy|adj|Nặng|This box is too heavy for me to lift.|Cái hộp này quá nặng để tôi có thể nhấc lên.",
-          "Helpful|adj|Hữu ích|Thank you for your helpful advice.|Cảm ơn bạn vì lời khuyên hữu ích.",
-          "Historical|adj|Thuộc về lịch sử|We visited several historical buildings.|Chúng tôi đã đến thăm một vài tòa nhà mang tính lịch sử.",
-          "Immediate|adj|Ngay lập tức|The medicine had an immediate effect.|Loại thuốc này có tác dụng ngay lập tức.",
-          "Important|adj|Quan trọng|It is important to eat a balanced diet.|Việc ăn một chế độ ăn cân bằng là rất quan trọng.",
-          "Innocent|adj|Vô tội, Ngây thơ|He claims he is innocent of the crime.|Anh ta khẳng định mình vô tội trong vụ án đó.",
-          "Logical|adj|Hợp lý, Có logic|That is a logical conclusion.|Đó là một kết luận hợp lý.",
-          "Massive|adj|Khổng lồ, To lớn|The explosion caused a massive hole in the ground.|Vụ nổ đã tạo ra một cái hố khổng lồ trên mặt đất.",
-          "Mental|adj|Thuộc về tinh thần|Stress can affect your mental health.|Căng thẳng có thể ảnh hưởng đến sức khỏe tinh thần của bạn.",
-          "Modern|adj|Hiện đại|Modern technology has changed our lives.|Công nghệ hiện đại đã thay đổi cuộc sống của chúng ta.",
-          "Narrow|adj|Chật hẹp|The road was too narrow for a bus.|Con đường quá hẹp cho một chiếc xe buýt.",
-          "Natural|adj|Tự nhiên|A hurricane is a natural disaster.|Sóng thần là một thảm họa tự nhiên.",
-          "Necessary|adj|Cần thiết|Food and water are necessary for life.|Thức ăn và nước là cần thiết cho sự sống.",
-          "Normal|adj|Bình thường|It is normal to feel nervous before a test.|Thật bình thường khi cảm thấy căng thẳng trước một bài kiểm tra.",
-          "Obvious|adj|Rõ ràng, Hiển nhiên|It was obvious that she was lying.|Thật hiển nhiên là cô ấy đang nói dối.",
-          "Official|adj|Chính thức|We are waiting for the official announcement.|Chúng tôi đang chờ một thông báo chính thức.",
-          "Original|adj|Bản gốc, Ban đầu|Is this painting an original?|Bức tranh này có phải là bản gốc không?",
-          "Particular|adj|Cụ thể, Riêng biệt|Is there any particular type of book you like?|Có thể loại sách cụ thể nào mà bạn thích không?",
-          "Perfect|adj|Hoàn hảo|The weather is perfect for a picnic.|Thời tiết thật hoàn hảo cho một buổi dã ngoại.",
-          "Physical|adj|Thuộc về thể chất|Exercise is good for your physical health.|Tập thể dục rất tốt cho sức khỏe thể chất của bạn.",
-          "Popular|adj|Phổ biến, Được yêu thích|Pizza is a very popular food worldwide.|Pizza là một món ăn rất phổ biến trên toàn thế giới.",
-          "Positive|adj|Tích cực|Try to have a positive attitude.|Hãy cố gắng giữ một thái độ tích cực.",
-          "Possible|adj|Có thể, Khả thi|Is it possible to buy tickets online?|Có thể mua vé trực tuyến không?",
-          "Powerful|adj|Mạnh mẽ|The lion is a large and powerful animal.|Sư tử là một loài động vật to lớn và mạnh mẽ.",
-          "Practical|adj|Thực tế|She offered some very practical advice.|Cô ấy đã đưa ra vài lời khuyên rất thực tế.",
-          "Precious|adj|Quý giá|Time is a precious commodity.|Thời gian là một thứ hàng hóa quý giá.",
-          "Private|adj|Riêng tư, Cá nhân|You shouldn't read her private diary.|Bạn không nên đọc cuốn nhật ký riêng tư của cô ấy.",
-          "Professional|adj|Chuyên nghiệp|You need to seek professional help.|Bạn cần tìm kiếm sự giúp đỡ chuyên nghiệp.",
-          "Profitable|adj|Sinh lời, Có lãi|The business was highly profitable this year.|Doanh nghiệp đã sinh lời rất cao trong năm nay.",
-          "Rare|adj|Hiếm, Quý hiếm|This is a very rare species of orchid.|Đây là một loài hoa lan rất hiếm.",
-          "Recent|adj|Gần đây|In recent years, the climate has changed significantly.|Trong những năm gần đây, khí hậu đã thay đổi đáng kể.",
-          "Regular|adj|Đều đặn, Thường xuyên|He makes regular visits to the hospital.|Ông ấy thực hiện những chuyến đi khám bệnh thường xuyên.",
-          "Relevant|adj|Có liên quan, Thích hợp|Please provide all relevant documents.|Vui lòng cung cấp tất cả các tài liệu có liên quan.",
-          "Secret|adj|Bí mật|They had a secret meeting yesterday.|Họ đã có một cuộc họp bí mật vào hôm qua.",
-          "Sensitive|adj|Nhạy cảm|My teeth are very sensitive to cold.|Răng của tôi rất nhạy cảm với đồ lạnh.",
-          "Serious|adj|Nghiêm túc, Nghiêm trọng|This is a serious problem that needs fixing.|Đây là một vấn đề nghiêm trọng cần được sửa chữa.",
-          "Similar|adj|Tương tự, Giống nhau|My sister and I look very similar.|Chị gái tôi và tôi trông rất giống nhau.",
-          "Simple|adj|Đơn giản|The rules of the game are quite simple.|Luật của trò chơi này khá đơn giản.",
-          "Specific|adj|Cụ thể, Đặc trưng|Could you be more specific about the details?|Bạn có thể nói cụ thể hơn về các chi tiết được không?",
-          "Standard|adj|Tiêu chuẩn|This is the standard size for a mattress.|Đây là kích thước tiêu chuẩn cho một tấm nệm.",
-          "Strange|adj|Kỳ lạ, Xa lạ|That is a very strange noise.|Đó là một tiếng ồn rất kỳ lạ.",
-          "Successful|adj|Thành công|The mission was highly successful.|Nhiệm vụ đã cực kỳ thành công.",
-          "Sudden|adj|Đột ngột|There was a sudden change in the weather.|Đã có một sự thay đổi đột ngột trong thời tiết.",
-          "Suitable|adj|Phù hợp|This movie is not suitable for children.|Bộ phim này không phù hợp với trẻ em.",
-          "Traditional|adj|Truyền thống|Ao Dai is the traditional dress of Vietnam.|Áo Dài là trang phục truyền thống của Việt Nam.",
-          "Typical|adj|Điển hình, Tiêu biểu|It was a typical rainy day in London.|Đó là một ngày mưa tiêu biểu ở London.",
-          "Unusual|adj|Bất thường, Khác thường|It is unusual for him to be late.|Việc anh ấy đến muộn là điều bất thường.",
-          "Useful|adj|Hữu ích|A pocket knife is a very useful tool.|Một con dao bỏ túi là một dụng cụ rất hữu ích.",
-          "Valuable|adj|Có giá trị|These paintings are extremely valuable.|Những bức tranh này cực kỳ có giá trị.",
-          "Various|adj|Nhiều loại, Đa dạng|There are various ways to solve this puzzle.|Có đa dạng cách để giải quyết câu đố này.",
-          "Visible|adj|Có thể nhìn thấy|The stars are visible at night.|Những ngôi sao có thể nhìn thấy được vào ban đêm.",
-          "Visual|adj|Thuộc về thị giác|The film has stunning visual effects.|Bộ phim có những hiệu ứng thị giác tuyệt đẹp.",
-          "Worthy|adj|Xứng đáng|She is a worthy champion.|Cô ấy là một nhà vô địch xứng đáng.",
-          "Absolutely|adv|Hoàn toàn, Tuyệt đối|You are absolutely right.|Bạn hoàn toàn đúng.",
-          "Actually|adv|Thực ra|I actually don't know the answer.|Thực ra tôi không biết câu trả lời.",
-          "Always|adv|Luôn luôn|I will always love you.|Tôi sẽ luôn luôn yêu bạn.",
-          "Anyway|adv|Dù sao đi nữa|It's raining, but I'm going out anyway.|Trời đang mưa, nhưng dù sao tôi cũng sẽ ra ngoài.",
-          "Approximately|adv|Xấp xỉ, Khoảng chừng|The journey takes approximately two hours.|Chuyến đi mất khoảng chừng 2 tiếng đồng hồ.",
-          "Automatically|adv|Tự động|The doors close automatically.|Các cánh cửa đóng lại một cách tự động.",
-          "Basically|adv|Về cơ bản|Basically, we have run out of money.|Về cơ bản, chúng ta đã cạn kiệt tiền.",
-          "Briefly|adv|Ngắn gọn|She smiled briefly before walking away.|Cô ấy cười mỉm ngắn gọn trước khi bước đi.",
-          "Carefully|adv|Cẩn thận|Please drive carefully on these icy roads.|Vui lòng lái xe cẩn thận trên những con đường đóng băng này.",
-          "Certainly|adv|Chắc chắn rồi|I will certainly help you with that.|Tôi chắc chắn sẽ giúp bạn chuyện đó.",
-          "Clearly|adv|Rõ ràng|She clearly stated her opinions.|Cô ấy đã tuyên bố rõ ràng những quan điểm của mình.",
-          "Closely|adv|Chặt chẽ, Gần gũi|The two languages are closely related.|Hai ngôn ngữ này có liên quan chặt chẽ với nhau.",
-          "Completely|adv|Hoàn toàn|The house was completely destroyed by fire.|Ngôi nhà đã bị lửa phá hủy hoàn toàn.",
-          "Constantly|adv|Liên tục|The world is constantly changing.|Thế giới đang thay đổi liên tục.",
-          "Currently|adv|Hiện tại|I am currently working as a teacher.|Hiện tại tôi đang làm giáo viên.",
-          "Daily|adv|Hàng ngày|This newspaper is published daily.|Tờ báo này được xuất bản hàng ngày.",
-          "Deeply|adv|Sâu sắc|I am deeply grateful for your help.|Tôi vô cùng biết ơn sự giúp đỡ của bạn.",
-          "Definitely|adv|Chắc chắn|I will definitely be there on time.|Tôi chắc chắn sẽ có mặt đúng giờ.",
-          "Directly|adv|Trực tiếp|I went directly to the hospital.|Tôi đã đi trực tiếp đến bệnh viện.",
-          "Easily|adv|Dễ dàng|He passed the driving test easily.|Anh ấy đã vượt qua bài kiểm tra lái xe một cách dễ dàng.",
-          "Effective|adv|Hiệu quả|The new law proved to be highly effective.|Luật mới đã chứng minh được tính vô cùng hiệu quả.",
-          "Entirely|adv|Toàn bộ, Hoàn toàn|It is entirely my fault.|Đó hoàn toàn là lỗi của tôi.",
-          "Especially|adv|Đặc biệt là|I love sweet foods, especially chocolate.|Tôi thích đồ ngọt, đặc biệt là sô-cô-la.",
-          "Eventually|adv|Cuối cùng thì|Eventually, the truth came out.|Cuối cùng thì, sự thật cũng được phơi bày.",
-          "Exactly|adv|Chính xác|That is exactly what I wanted to say.|Đó chính xác là những gì tôi muốn nói.",
-          "Extremely|adv|Cực kỳ|The weather was extremely hot yesterday.|Thời tiết hôm qua cực kỳ nóng.",
-          "Finally|adv|Cuối cùng|They finally agreed to the plan.|Cuối cùng họ cũng đồng ý với kế hoạch.",
-          "Frequently|adv|Thường xuyên|Buses run frequently between the two cities.|Xe buýt chạy thường xuyên giữa hai thành phố.",
-          "Gradually|adv|Dần dần|The noise gradually faded away.|Tiếng ồn dần dần nhỏ lại.",
-          "Hardly|adv|Hầu như không|I hardly ever watch television.|Tôi hầu như không bao giờ xem tivi.",
-          "Highly|adv|Rất, Lắm (khen ngợi)|His books are highly recommended.|Những cuốn sách của ông ấy rất được khuyến khích đọc.",
-          "Immediately|adv|Ngay lập tức|You must leave immediately.|Bạn phải rời đi ngay lập tức.",
-          "Increasingly|adv|Ngày càng|It is becoming increasingly difficult to find a job.|Ngày càng khó khăn để tìm được một công việc.",
-          "Initially|adv|Ban đầu|Initially, I thought he was joking.|Ban đầu, tôi tưởng anh ấy đang nói đùa.",
-          "Lately|adv|Gần đây|Have you seen him lately?|Gần đây bạn có gặp anh ấy không?",
-          "Mainly|adv|Chủ yếu|The audience consisted mainly of teenagers.|Khán giả chủ yếu là thanh thiếu niên.",
-          "Merely|adv|Chỉ là, Đơn thuần|It is merely a scratch.|Đó chỉ là một vết xước đơn thuần.",
-          "Mostly|adv|Phần lớn, Chủ yếu|I read mostly science fiction books.|Tôi đọc phần lớn là sách khoa học viễn tưởng.",
-          "Naturally|adv|Đương nhiên, Tự nhiên|Naturally, I said yes when she asked.|Đương nhiên là tôi đã nói đồng ý khi cô ấy hỏi.",
-          "Nearly|adv|Gần như|It took nearly two hours to get there.|Mất gần hai tiếng đồng hồ để đến được đó.",
-          "Normally|adv|Thông thường|Normally, I wake up at 7 AM.|Thông thường, tôi thức dậy vào lúc 7 giờ sáng.",
-          "Occasionally|adv|Thỉnh thoảng|We occasionally meet for a cup of coffee.|Chúng tôi thỉnh thoảng gặp nhau để uống một tách cà phê.",
-          "Particularly|adv|Đặc biệt|I am not particularly interested in sports.|Tôi không đặc biệt hứng thú với thể thao lắm.",
-          "Perfectly|adv|Một cách hoàn hảo|You speak English perfectly.|Bạn nói tiếng Anh một cách hoàn hảo.",
-          "Personally|adv|Cá nhân tôi|Personally, I prefer the blue one.|Cá nhân tôi thì, tôi thích cái màu xanh hơn.",
-          "Previously|adv|Trước đây|The building was previously used as a bank.|Tòa nhà này trước đây được sử dụng làm một ngân hàng.",
-          "Primarily|adv|Chủ yếu|The disease primarily affects older people.|Căn bệnh này chủ yếu ảnh hưởng đến người lớn tuổi.",
-          "Probably|adv|Có lẽ, Có khả năng|It will probably rain tomorrow.|Có lẽ ngày mai trời sẽ mưa.",
-          "Quickly|adv|Nhanh chóng|She dressed quickly and went out.|Cô ấy thay đồ nhanh chóng rồi đi ra ngoài.",
-          "Rarely|adv|Hiếm khi|I rarely eat fast food.|Tôi hiếm khi ăn đồ ăn nhanh.",
-          "Readily|adv|Sẵn sàng, Dễ dàng|Information is readily available on the internet.|Thông tin có sẵn dễ dàng trên internet.",
-          "Recently|adv|Gần đây|They recently bought a new house.|Họ gần đây đã mua một ngôi nhà mới.",
-          "Regularly|adv|Đều đặn|You should exercise regularly.|Bạn nên tập thể dục đều đặn.",
-          "Roughly|adv|Khoảng chừng, Đại khái|There were roughly 200 people at the party.|Có khoảng chừng 200 người tại bữa tiệc.",
-          "Seriously|adv|Một cách nghiêm túc|You need to take this matter seriously.|Bạn cần nhìn nhận vấn đề này một cách nghiêm túc.",
-          "Significantly|adv|Đáng kể|Profits have increased significantly this year.|Lợi nhuận đã tăng đáng kể trong năm nay.",
-          "Simply|adv|Đơn giản là|It is simply a matter of time.|Đó đơn giản chỉ là vấn đề thời gian.",
-          "Slightly|adv|Một chút, Hơi hơi|I am slightly confused by your question.|Tôi hơi hơi bối rối bởi câu hỏi của bạn.",
-          "Slowly|adv|Chậm chạp|He walked slowly down the street.|Anh ấy bước đi chậm chạp dọc theo con phố.",
-          "Suddenly|adv|Đột nhiên|The car suddenly stopped.|Chiếc ô tô đột nhiên dừng lại.",
-          "Totally|adv|Hoàn toàn|I totally agree with you.|Tôi hoàn toàn đồng ý với bạn.",
-          "Truly|adv|Thực sự|I am truly sorry for your loss.|Tôi thực sự rất tiếc về sự mất mát của bạn.",
-          "Typically|adv|Điển hình, Thường thì|Typically, we have dinner at 8 PM.|Thường thì, chúng tôi ăn tối vào lúc 8 giờ tối.",
-          "Unfortunately|adv|Thật không may|Unfortunately, the flight was cancelled.|Thật không may, chuyến bay đã bị hủy.",
-          "Usually|adv|Thường thường|I usually drink tea in the morning.|Tôi thường thường uống trà vào buổi sáng.",
-          "Virtually|adv|Hầu như|The stadium was virtually empty.|Sân vận động hầu như trống rỗng.",
-          "Widely|adv|Rộng rãi|English is widely spoken around the world.|Tiếng Anh được nói rộng rãi trên toàn thế giới.",
-          "Wildly|adv|Điên cuồng, Rất nhiều|Prices vary wildly from store to store.|Giá cả thay đổi rất nhiều từ cửa hàng này sang cửa hàng khác."
-        ];
-        
-        VOCAB_DB = RAW_VOCAB.map(str => {
-          let parts = str.split('|');
-          return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "", exVi: parts[4] || "" };
-        });
-
-        await setDoc(vocabRef, { words: VOCAB_DB });
-        localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
-        isVocabReady = true;
+        console.error("Database từ vựng trên Firebase bị trống!");
+        showToast("Lỗi: Không tìm thấy dữ liệu gốc trên hệ thống!");
       }
     } catch (e) {
       console.error("Lỗi tải dữ liệu từ vựng:", e);
-      showToast("Đang tải dữ liệu từ vựng...");
+      showToast("Lỗi kết nối đến máy chủ từ vựng!");
     }
   }
 
@@ -770,11 +342,27 @@
   let currentWordAudio = '';   
   let tempUserName = "";
 
+  // Bật nút thông báo
+  if ("Notification" in window && Notification.permission === "default") {
+    document.getElementById('btnNotify').style.display = 'block';
+  }
+
+  document.getElementById('btnNotify').onclick = () => {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        document.getElementById('btnNotify').style.display = 'none';
+        showToast("Đã bật thông báo thành công!");
+        setupDailyNotification();
+      }
+    });
+  };
+
   function setupDailyNotification() {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
+    if (Notification.permission === "granted") {
+      document.getElementById('btnNotify').style.display = 'none'; // Giấu nút nếu đã cấp quyền
     }
+    
     setInterval(() => {
       if (Notification.permission === "granted") {
         const now = new Date();
@@ -790,10 +378,14 @@
   }
 
   // --- HÀM KIỂM TRA TÊN THÔNG MINH ---
+  function removeAccents(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+  }
+
   function checkIsCrush(name) {
     if (!name) return false;
-    let cleanName = name.trim().toLowerCase().replace(/\s+/g, ' '); 
-    return (cleanName === 'yến ngọc' || cleanName === 'yen ngoc');
+    let cleanName = removeAccents(name).trim().toLowerCase().replace(/\s+/g, ' '); 
+    return (cleanName === 'yen ngoc');
   }
 
   function getDefaultState(name, method) {
@@ -867,10 +459,11 @@
     }
   }
 
-  function initQueue() {
+  function initQueue(shouldSave = true) {
     if (state.queue.length === 0) {
       let due = state.words.filter(w => w.nextTs <= Date.now()).sort(()=>0.5 - Math.random()).slice(0, 5);
       state.queue = due.map(w => w.id);
+      if(shouldSave) save(); 
     }
   }
 
@@ -979,7 +572,7 @@
     if (docSnap.exists()) {
       state = docSnap.data();
       
-      // ÉP KIỂU LẠI CHẾ ĐỘ ISCRUSH (Phòng trường hợp data cũ lưu false)
+      // ÉP KIỂU LẠI CHẾ ĐỘ ISCRUSH (Chuẩn hóa bỏ dấu và khoảng trắng)
       state.isCrush = checkIsCrush(state.userName);
 
       for (let i = 0; i < state.words.length; i++) {
@@ -1004,8 +597,9 @@
     await setDoc(docRef, state);
     localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
     
+    // Khởi chạy hàng đợi trước khi vẽ UI để tránh flash màn hình "Hoàn thành"
+    initQueue(false); 
     showMainAppUI();
-    initQueue(); 
     loadWord(); 
     setupDailyNotification();
     
@@ -1080,7 +674,7 @@
 
   document.getElementById('btnCheck').onclick = () => {
     let input = document.getElementById('focusInput').value;
-    if (!input.trim()) return showToast("Vui lòng nhập đáp án!"); // Thêm chặn gửi rỗng
+    if (!input.trim()) return showToast("Vui lòng nhập đáp án!"); // Chặn Enter trống
 
     const w = state.words.find(x => x.id === state.queue[0]);
     let target = testDirection === 'en-vi' ? w.m : w.w;
@@ -1118,7 +712,7 @@
       state.xp += 15; 
       checkLevelUp(oldXp, state.xp);
       save();
-      // Ép màn hình chính vẽ lại lỡ khi có từ bị đá về hàng đợi học
+      // Ép màn hình chính cập nhật sau khi học xong
       updateUI(); loadWord();
       return;
     }
@@ -1174,7 +768,7 @@
     let enAns = document.getElementById('revInputEn').value;
     let viAns = document.getElementById('revInputVi').value;
     
-    // Check nhập thiếu
+    // Cảnh báo nếu ô nhập bị trống
     if (revMode === 0 && !viAns.trim()) return showToast("Vui lòng nhập nghĩa!");
     if (revMode === 1 && !enAns.trim()) return showToast("Vui lòng nhập từ tiếng Anh!");
     if (revMode === 2 && (!enAns.trim() || !viAns.trim())) return showToast("Vui lòng nhập đủ 2 ô!");
