@@ -10,7 +10,7 @@
       --card: rgba(255, 255, 255, 0.08); 
       --accent1: #e94560; --accent2: #ff7eb3;
       --glass: rgba(255, 255, 255, 0.1); 
-      --success: #10b981;
+      --success: #10b981; --info: #3b82f6;
       font-family: 'Segoe UI', system-ui, sans-serif;
       color-scheme: dark;
     }
@@ -29,7 +29,7 @@
       display: grid; grid-template-columns: 300px 1fr; gap: clamp(15px, 3vw, 20px); 
     }
     .panel { 
-      background: var(--card); backdrop-filter: blur(10px); 
+      background: rgba(22, 33, 62, 0.85); 
       border-radius: 20px; padding: clamp(20px, 5vw, 30px); 
       box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     }
@@ -48,6 +48,7 @@
     .btn.danger:hover { background: var(--accent1); }
     .btn.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
     .btn.success { background: var(--success); }
+    .btn.info { background: linear-gradient(90deg, #2563eb, #3b82f6); }
     
     .avatar { 
       width: clamp(80px, 20vw, 100px); height: clamp(80px, 20vw, 100px); border-radius: 50%; margin: 0 auto 15px; 
@@ -65,62 +66,39 @@
     
     .word-type {
       font-size: clamp(14px, 3vw, 18px);
-      color: #a5b4fc;
-      background: rgba(165, 180, 252, 0.15);
-      padding: 4px 10px;
-      border-radius: 8px;
-      vertical-align: middle;
-      margin-left: 10px;
-      font-weight: normal;
-      display: inline-block;
+      color: #a5b4fc; background: rgba(165, 180, 252, 0.15);
+      padding: 4px 10px; border-radius: 8px; vertical-align: middle; margin-left: 10px; font-weight: normal; display: inline-block;
     }
-
     .focus-meaning { font-size: clamp(20px, 6vw, 24px); color: #ccc; margin-bottom: 5px; }
-    
-    .example-container {
-      background: rgba(0,0,0,0.2);
-      padding: 15px;
-      border-radius: 12px;
-      margin: 15px auto 25px auto;
-      max-width: 90%;
-      display: none;
-    }
+    .example-container { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin: 15px auto 25px auto; max-width: 90%; display: none; }
     .focus-example-en { font-size: clamp(15px, 4vw, 18px); color: #a5b4fc; font-style: italic; margin-bottom: 5px; }
     .focus-example-vi { font-size: clamp(14px, 3.5vw, 16px); color: #9ca3af; }
-
     .secret-hint { font-size: clamp(14px, 4vw, 16px); color: var(--accent2); font-style: italic; margin-bottom: 30px; display: none; min-height: 20px;}
     
     .focus-input { 
       width: 100%; max-width: 400px; padding: 15px; font-size: 16px; border-radius: 12px; 
       border: 2px solid rgba(255,255,255,0.2); background: transparent; 
-      color: white; text-align: center; outline: none; margin: 0 auto 20px auto;
-      display: none;
+      color: white; text-align: center; outline: none; margin: 0 auto 20px auto; display: none;
     }
     .focus-input:focus { border-color: var(--accent2); }
-    
     .controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 400px; margin: 0 auto;}
     .controls .btn { flex: 1; min-width: 140px; }
     
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 350px; text-align: center; background: rgba(0,0,0,0.9); padding: 15px 20px; border-radius: 12px; color: white; opacity: 0; transition: 0.3s; font-size: 15px; pointer-events: none; z-index: 999; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
-    
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); padding: 20px;}
-    .modal-box { background: var(--bg-mid); padding: clamp(25px, 6vw, 40px); border-radius: 20px; text-align: center; border: 2px solid var(--accent2); width: 100%; max-width: 400px;}
-    
-    #loginInput {
-      width: 100%; padding: 15px; font-size: 16px; border-radius: 12px; 
-      border: 2px solid var(--accent2); background: transparent; 
-      color: white; text-align: center; outline: none; margin-bottom: 20px;
-    }
+    .modal-box { background: var(--bg-mid); padding: clamp(25px, 6vw, 40px); border-radius: 20px; text-align: center; border: 2px solid var(--accent2); width: 100%; max-width: 500px;}
+    #loginInput { width: 100%; padding: 15px; font-size: 16px; border-radius: 12px; border: 2px solid var(--accent2); background: transparent; color: white; text-align: center; outline: none; margin-bottom: 20px; }
 
-    @media(max-width: 800px) { 
-      .app { grid-template-columns: 1fr; } 
-    }
-    @media(max-width: 480px) {
-      header { flex-direction: column; justify-content: center; }
-      header .btn { width: 100%; }
-      .controls { flex-direction: column; }
-      .controls .btn { width: 100%; }
-    }
+    /* UI Cho Thi Thử */
+    .mock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
+    .mock-timer { font-size: 24px; font-weight: bold; color: var(--accent1); }
+    .mock-q-type { font-size: 14px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;}
+    .mic-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--accent2); color: white; font-size: 24px; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 20px auto; transition: 0.3s; box-shadow: 0 0 15px var(--accent2); }
+    .mic-btn.listening { animation: pulse 1s infinite; background: var(--accent1); box-shadow: 0 0 25px var(--accent1); }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    @media(max-width: 800px) { .app { grid-template-columns: 1fr; } }
+    @media(max-width: 480px) { header { flex-direction: column; justify-content: center; } header .btn { width: 100%; } .controls { flex-direction: column; } .controls .btn { width: 100%; } }
   </style>
 </head>
 <body>
@@ -156,10 +134,11 @@
     <header class="panel">
       <div class="title" id="headerTitle">Góc Học Tập</div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
-        <button class="btn success" id="btnNotify" style="padding: 8px 15px; font-size: 14px; display: none;">Bật thông báo</button>
+        <button class="btn info" id="btnMockTest" style="padding: 8px 15px; font-size: 14px;">📝 Thi Thử</button>
+        <button class="btn success" id="btnNotify" style="padding: 8px 15px; font-size: 14px; display: none;">🔔</button>
         <button class="btn warning" id="btnReview" style="padding: 8px 15px; font-size: 14px;">Ôn bài</button>
         <button class="btn primary" id="btnCheckin" style="padding: 8px 15px; font-size: 14px;">Điểm danh</button>
-        <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Đăng xuất</button>
+        <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Thoát</button>
       </div>
     </header>
 
@@ -197,7 +176,8 @@
           <input type="text" class="focus-input" id="focusInput" autocomplete="off">
           
           <div class="controls" id="learnControls">
-            <button class="btn" onclick="playAudio()">Nghe phát âm</button>
+            <button class="btn info" id="btnSpeakEval">🎙️ Đánh giá phát âm</button>
+            <button class="btn" onclick="playAudio()">Nghe mẫu</button>
             <button class="btn primary" id="btnStartTest">Đã nhớ, kiểm tra ngay</button>
           </div>
 
@@ -212,12 +192,40 @@
 
   <div class="toast" id="toast"></div>
 
+  <div class="modal" id="mockTestModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="mock-header">
+        <div style="font-size: 18px; color: #aaa;">Câu: <span id="mockProgressText" style="color: #fff; font-weight: bold;">1/15</span></div>
+        <div class="mock-timer" id="mockTimerDisplay">15:00</div>
+      </div>
+      <div class="mock-q-type" id="mockQType">KỸ NĂNG NGHE</div>
+      <div id="mockQContent" style="font-size: clamp(24px, 6vw, 36px); font-weight: bold; margin-bottom: 20px;">---</div>
+      
+      <button class="btn" id="btnMockPlayAudio" style="margin: 0 auto 20px; display: none;">🔊 Nghe Lại</button>
+      <button class="mic-btn" id="btnMockMic" style="display: none;">🎤</button>
+      <input type="text" class="focus-input" id="mockInput" autocomplete="off" placeholder="Nhập đáp án của bạn...">
+      
+      <div style="color: #aaa; margin-bottom: 20px; font-style: italic; min-height: 20px;" id="mockTranscript"></div>
+
+      <button class="btn info" id="btnMockSubmit" style="width: 100%;">Chốt đáp án</button>
+    </div>
+  </div>
+
+  <div class="modal" id="mockResultModal">
+    <div class="modal-box">
+      <h2 style="color: var(--accent2); margin-bottom: 10px; font-size: 32px;">Kết Quả Bài Thi</h2>
+      <h1 style="font-size: 60px; color: var(--success); margin: 20px 0;" id="mockFinalScore">10/15</h1>
+      <p id="mockResultMessage" style="margin-bottom: 25px; font-size: 18px; color: #ccc;">---</p>
+      <button class="btn primary" onclick="document.getElementById('mockResultModal').style.display='none'" style="width: 100%;">Quay lại</button>
+    </div>
+  </div>
+
   <div class="modal" id="levelModal">
     <div class="modal-box">
       <h2 style="color: var(--accent2); margin-bottom: 10px;">Danh hiệu mới!</h2>
       <h3 id="modalTitleName" style="margin-bottom: 15px;">---</h3>
       <p id="modalMessage" style="margin-bottom: 25px; font-size: 16px; color: #ccc;">---</p>
-      <button class="btn primary" onclick="document.getElementById('levelModal').style.display='none'" style="width: 100%;">Tiếp tục học thôi</button>
+      <button class="btn primary" onclick="document.getElementById('levelModal').style.display='none'" style="width: 100%;">Tiếp tục</button>
     </div>
   </div>
 
@@ -225,15 +233,12 @@
     <div class="modal-box" style="max-width: 500px; padding: 30px;">
       <h2 style="color: var(--accent2); margin-bottom: 10px;">Ôn Bài (<span id="revProgress">1</span>/3)</h2>
       <p id="revHardModeTip" style="color: var(--success); font-size: 14px; font-style: italic; display: none;">Chế độ Siêu Khó: Nghe và gõ cả 2!</p>
-      
       <div id="revWordDisplay" style="font-size: clamp(30px, 8vw, 40px); font-weight: bold; margin: 15px 0;">---</div>
       <button class="btn" onclick="playReviewAudio()" style="margin: 0 auto 20px;">Nghe phát âm</button>
-      
       <input type="text" id="revInputEn" class="focus-input" placeholder="Gõ từ tiếng Anh..." autocomplete="off" style="margin-bottom: 10px; border-color: #f59e0b;">
       <input type="text" id="revInputVi" class="focus-input" placeholder="Gõ nghĩa tiếng Việt..." autocomplete="off" style="margin-bottom: 20px; border-color: #f59e0b;">
-      
-      <button class="btn warning" id="btnCheckReview" style="width: 100%; margin-bottom: 10px;">Kiểm tra trí nhớ</button>
-      <button class="btn" id="btnCancelReview" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Thoát ôn tập</button>
+      <button class="btn warning" id="btnCheckReview" style="width: 100%; margin-bottom: 10px;">Kiểm tra</button>
+      <button class="btn" id="btnCancelReview" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Thoát</button>
     </div>
   </div>
 
@@ -265,46 +270,46 @@
   const auth = getAuth(app);
   const googleProvider = new GoogleAuthProvider();
 
+  // DANH HIỆU DÀNH RIÊNG CHO YẾN NGỌC (Hệ số x2 khoảng cách)
   const TITLES = [
     { reqXp: 0, name: "Người lạ ơi", msg: "Bắt đầu hành trình nhé!" },
-    { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },
-    { reqXp: 200, name: "Thiên thần tháng 3", msg: "Tuổi mới luôn vui vẻ và học giỏi tiếng Anh nha!" },
-    { reqXp: 300, name: "Ngoại lệ của anh", msg: "Học tiếng Anh có thể khó, nhưng có anh ở đây rồi!" },
-    { reqXp: 400, name: "Nóc nhà tương lai", msg: "Giỏi quá! Pass điện thoại em giữ hết!" }
+    { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },         // Đòi +100
+    { reqXp: 300, name: "Thiên thần tháng 3", msg: "Đáng yêu quá đi mất!" },           // Đòi +200
+    { reqXp: 700, name: "Ngoại lệ của anh", msg: "Học giỏi quá có thưởng nè!" },        // Đòi +400
+    { reqXp: 1500, name: "Nóc nhà tương lai", msg: "Pass điện thoại nộp ra đây!" }      // Đòi +800
   ];
 
   const SECRET_HINTS = [
-    "Hint: Người làm ra web này rất thích nụ cười của nàng lắm ó.",
-    "Hint: Học mệt thì nghỉ ngơi, đừng ép bản thân quá nhé.",
-    "Hint: 10.000 từ vựng cũng không diễn tả hết độ đáng yêu của nàng.",
-    "Hint: Cô gái tháng 3 lúc nào cũng tuyệt vời nhất.",
-    "Hint: Cố lên nhé, mìn luôn ủng hộ cou!"
+    "Hint: Nụ cười của nàng là động lực để mìn làm cái web này đó.",
+    "Hint: Học mệt thì nghỉ ngơi xíu nha, đừng ép bản thân quá.",
+    "Hint: Cố lên nhé, cô gái tháng 3 tuyệt vời nhất thế giới!",
+    "Hint: Anh đã thức đêm chỉ để code cho em chức năng phát âm này đó 🥰"
   ];
 
-  // ==========================================
-  // THUẬT TOÁN CHẤM ĐIỂM HOÀN HẢO (BỎ QUA KHOẢNG TRẮNG, DẤU PHẨY, DẤU NGOẶC)
-  // ==========================================
+  // KHỞI TẠO BỘ NHẬN DIỆN GIỌNG NÓI
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+  if(recognition) {
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+  }
+
   function isAnswerCorrect(userInput, targetAnswer) {
     if (!userInput) return false;
     let cleanInput = userInput.trim().toLowerCase().replace(/[.!?,;'"]/g, '').replace(/\s+/g, ' ');
-    
     let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => {
       let withoutBrackets = s.replace(/\s*\(.*?\)\s*/g, ' ').trim();
       return withoutBrackets.replace(/[.!?,;'"]/g, '').replace(/\s+/g, ' ');
     });
-    
     return validTargets.includes(cleanInput);
   }
 
-  // ==========================================
-  // HỆ THỐNG DỮ LIỆU TỪ VỰNG TỐI ƯU (Fetch from Firebase Gốc)
-  // ==========================================
   let VOCAB_DB = [];
   let isVocabReady = false;
 
   async function loadVocabulary() {
     let cachedVocab = localStorage.getItem('vocab_database');
-    
     if (cachedVocab) {
       let parsed = JSON.parse(cachedVocab);
       if (parsed.length > 0 && parsed[0].exVi !== undefined) {
@@ -318,23 +323,48 @@
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
-      if (vocabSnap.exists() && vocabSnap.data().words) {
+      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].exVi !== undefined) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
-        console.error("Database từ vựng trên Firebase bị trống!");
-        showToast("Lỗi: Không tìm thấy dữ liệu gốc trên hệ thống!");
+        const RAW_VOCAB = [
+          "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.|Máy bay sẽ cất cánh sớm thôi.",
+          "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.|Tôi mong đợi được nghe tin từ bạn.",
+          "Break down|v|Hỏng hóc, Suy sụp|My car broke down on the way to work.|Xe của tôi bị hỏng trên đường đi làm.",
+          "Give up|v|Từ bỏ, Bỏ cuộc|Don't give up on your dreams.|Đừng từ bỏ ước mơ của bạn.",
+          "Figure out|v|Tìm ra, Hiểu ra|We need to figure out a solution.|Chúng ta cần tìm ra một giải pháp.",
+          "Accept|v|Chấp nhận|She decided to accept the job offer.|Cô ấy quyết định chấp nhận lời mời làm việc.",
+          "Decision|n|Quyết định|It was a difficult decision to make.|Đó là một quyết định khó khăn.",
+          "Encourage|v|Động viên, Khuyến khích|My parents always encourage me.|Bố mẹ luôn động viên tôi.",
+          "Genuine|adj|Thành thật, Chân thật|She showed a genuine interest in our work.|Cô ấy thể hiện sự quan tâm chân thành đến công việc của chúng tôi.",
+          "Knowledge|n|Kiến thức|Knowledge is power.|Kiến thức là sức mạnh.",
+          "Beautiful|adj|Xinh đẹp, Đẹp|She is a beautiful girl.|Cô ấy là một cô gái xinh đẹp.",
+          "Quickly|adv|Nhanh chóng, Nhanh|He completed the task very quickly.|Anh ấy hoàn thành nhiệm vụ rất nhanh chóng.",
+          "Information|n|Thông tin|I need more information about the project.|Tôi cần thêm thông tin về dự án.",
+          "Destiny|n|Định mệnh, Số phận|You cannot escape your destiny.|Bạn không thể trốn tránh định mệnh của mình.",
+          "Gorgeous|adj|Tuyệt đẹp, Lộng lẫy|You look absolutely gorgeous tonight.|Tối nay bạn trông thực sự lộng lẫy.",
+          "Ethereal|adj|Thanh tao, Siêu phàm|She has an ethereal beauty.|Cô ấy sở hữu một vẻ đẹp thanh tao.",
+          "Breathtaking|adj|Đẹp ngộp thở, Hấp dẫn|The view from the top is breathtaking.|Cảnh nhìn từ trên đỉnh đẹp đến ngộp thở.",
+          "Mesmerize|v|Mê hoặc, Quyến rũ|I was completely mesmerized by the performance.|Tôi đã hoàn toàn bị mê hoặc bởi màn trình diễn.",
+          "Sugar|n|Đường (ăn)|Add some sugar to the coffee.|Thêm chút đường vào cà phê."
+        ];
+        
+        VOCAB_DB = RAW_VOCAB.map(str => {
+          let parts = str.split('|');
+          return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "", exVi: parts[4] || "" };
+        });
+
+        await setDoc(vocabRef, { words: VOCAB_DB });
+        localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
+        isVocabReady = true;
       }
     } catch (e) {
-      console.error("Lỗi tải dữ liệu từ vựng:", e);
-      showToast("Lỗi kết nối đến máy chủ từ vựng!");
+      showToast("Đang tải dữ liệu từ vựng...");
     }
   }
 
   const vocabLoadPromise = loadVocabulary();
-
-  // ==========================================
 
   let state = null;
   let currentUserDocId = null; 
@@ -342,42 +372,17 @@
   let currentWordAudio = '';   
   let tempUserName = "";
 
-  // Bật nút thông báo
-  if ("Notification" in window && Notification.permission === "default") {
-    document.getElementById('btnNotify').style.display = 'block';
-  }
-
-  document.getElementById('btnNotify').onclick = () => {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        document.getElementById('btnNotify').style.display = 'none';
-        showToast("Đã bật thông báo thành công!");
-        setupDailyNotification();
-      }
-    });
-  };
-
-  function setupDailyNotification() {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      document.getElementById('btnNotify').style.display = 'none'; // Giấu nút nếu đã cấp quyền
+  // TÍNH TOÁN LEVEL NGƯỜI DÙNG THƯỜNG (Hệ số x2)
+  function getNormalLevelData(xp) {
+    let req = 100; let lvl = 1; let totalReq = 0;
+    while(xp >= totalReq + req) {
+      totalReq += req;
+      req *= 2; 
+      lvl++;
     }
-    
-    setInterval(() => {
-      if (Notification.permission === "granted") {
-        const now = new Date();
-        if (now.getHours() === 0 && now.getMinutes() >= 3 && localStorage.getItem('last_notified') !== now.toDateString()) {
-          new Notification("Góc Học Tập gọi nè!", {
-            body: `Chào ${state.userName || 'bạn'}, qua ngày mới rồi! Vào học vài từ vựng rồi hẵng ngủ cho ngon nhé!`,
-            icon: "https://api.dicebear.com/7.x/notionists/svg?seed=love"
-          });
-          localStorage.setItem('last_notified', now.toDateString());
-        }
-      }
-    }, 60000);
+    return { level: lvl, currentBase: totalReq, nextGoal: totalReq + req };
   }
 
-  // --- HÀM KIỂM TRA TÊN THÔNG MINH ---
   function removeAccents(str) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
   }
@@ -410,13 +415,7 @@
     if(currentUserDocId && state) {
       localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
       updateUI(); 
-
-      try {
-        await setDoc(doc(db, "users", currentUserDocId), state);
-      } catch (e) {
-        console.error(e);
-        showToast("Lỗi đồng bộ dữ liệu lên cloud!");
-      }
+      setDoc(doc(db, "users", currentUserDocId), state).catch(e => console.log(e));
     }
   }
 
@@ -442,12 +441,10 @@
       }
     } else {
       document.getElementById('userAvatar').style.backgroundImage = "url('https://api.dicebear.com/7.x/notionists/svg?seed=love')";
-      let currentLevel = Math.floor(state.xp / 100) + 1;
-      let nextLevelXp = currentLevel * 100;
-      
-      document.getElementById('userTitle').innerText = `Cấp độ ${currentLevel}`;
-      document.getElementById('xpNextLevel').innerText = `Cần ${nextLevelXp - state.xp} EXP để lên Cấp ${currentLevel + 1}`;
-      document.getElementById('titleProgress').style.width = ((state.xp % 100) / 100) * 100 + '%';
+      let lvlData = getNormalLevelData(state.xp);
+      document.getElementById('userTitle').innerText = `Cấp độ ${lvlData.level}`;
+      document.getElementById('xpNextLevel').innerText = `Cần ${lvlData.nextGoal - state.xp} EXP để lên Cấp ${lvlData.level + 1}`;
+      document.getElementById('titleProgress').style.width = ((state.xp - lvlData.currentBase) / (lvlData.nextGoal - lvlData.currentBase)) * 100 + '%';
     }
 
     if(state.queue.length === 0) {
@@ -514,12 +511,11 @@
         document.getElementById('levelModal').style.display = 'flex';
       }
     } else {
-      let oldLevel = Math.floor(oldXp / 100) + 1;
-      let newLevel = Math.floor(newXp / 100) + 1;
-      
-      if (newLevel > oldLevel) {
-        document.getElementById('modalTitleName').innerText = `Cấp độ ${newLevel}`;
-        document.getElementById('modalMessage').innerText = "Tuyệt vời! Bạn vừa đạt được cấp độ mới, hãy tiếp tục cố gắng nhé!";
+      let oldLvl = getNormalLevelData(oldXp).level;
+      let newLvl = getNormalLevelData(newXp).level;
+      if (newLvl > oldLvl) {
+        document.getElementById('modalTitleName').innerText = `Cấp độ ${newLvl}`;
+        document.getElementById('modalMessage').innerText = "Tuyệt vời! Càng lên cao càng khó, cố gắng nhé!";
         document.getElementById('levelModal').style.display = 'flex';
       }
     }
@@ -537,11 +533,37 @@
 
   window.playAudio = function() {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Xóa âm thanh cũ tránh nhại tiếng
+      window.speechSynthesis.cancel();
       let u = new SpeechSynthesisUtterance(currentWordAudio);
       u.lang = 'en-US'; window.speechSynthesis.speak(u);
     } else showToast('Trình duyệt không hỗ trợ đọc âm thanh');
   };
+
+  // --- LOGIC PHÁT ÂM (AI CHẤM ĐIỂM) ---
+  document.getElementById('btnSpeakEval').onclick = () => {
+    if (!recognition) return showToast("Trình duyệt của bạn không hỗ trợ tính năng nói (Nên dùng Chrome/Edge).");
+    showToast("Đang nghe... Hãy đọc to từ này!");
+    recognition.start();
+  };
+
+  if(recognition) {
+    recognition.onresult = function(event) {
+      const transcript = event.results[0][0].transcript;
+      const target = currentWordAudio;
+      const isCorrect = isAnswerCorrect(transcript, target);
+
+      if (isCorrect) {
+        if (state.isCrush) showToast("Giọng bé yêu ngọt ngào quá, chuẩn 100% nha! 💖 (+5 EXP)");
+        else showToast("Phát âm xuất sắc! Đạt chuẩn 100%. (+5 EXP)");
+        
+        let oldXp = state.xp; state.xp += 5; checkLevelUp(oldXp, state.xp); save();
+      } else {
+        if (state.isCrush) showToast(`Ủa em đọc là '${transcript}' hả? Dễ thương xỉu nhưng sai xíu rùi, nghe mẫu và thử lại nha! 🥰`);
+        else showToast(`Hệ thống nhận diện là '${transcript}'. Cố gắng uốn lưỡi lại chút nhé!`);
+      }
+    };
+    recognition.onerror = function(event) { showToast("Không nghe rõ, vui lòng kiểm tra Micro hoặc cấp quyền nhé."); };
+  }
 
   // --- LOGIC ĐĂNG NHẬP ---
   document.getElementById('btnNextStep').onclick = () => {
@@ -562,11 +584,10 @@
     document.getElementById('step1Name').style.display = 'block';
   };
 
-async function fetchUserData(method) {
+  async function fetchUserData(method) {
     let cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
     let isCacheValid = false;
     
-    // BƯỚC 1: HIỆN GIAO DIỆN TỪ CACHE (NẾU CÓ)
     if (cachedData) {
       state = JSON.parse(cachedData);
       if (state.words && state.words.length > 0 && state.words[0].exVi !== undefined) {
@@ -574,13 +595,11 @@ async function fetchUserData(method) {
         initQueue(false); 
         showMainAppUI(); 
         loadWord();
-        setupDailyNotification();
       }
     }
 
     if (!isCacheValid) showToast('Đang đồng bộ dữ liệu...');
 
-    // BƯỚC 2: KÉO DATA TỪ FIREBASE VÀ CẬP NHẬT NGẦM
     vocabLoadPromise.then(async () => {
       const docRef = doc(db, "users", currentUserDocId);
       const docSnap = await getDoc(docRef);
@@ -588,16 +607,8 @@ async function fetchUserData(method) {
       let serverState = null;
       if (docSnap.exists()) {
         serverState = docSnap.data();
-        
-        // --- ĐÂY LÀ ĐOẠN FIX LỖI CRUSH ---
-        // Nếu bạn gõ tên ở ô đăng nhập, hệ thống sẽ lấy tên mới cập nhật lên Firebase
-        if (tempUserName && tempUserName.trim() !== "") {
-          serverState.userName = tempUserName.trim();
-        }
-
-        // Bắt buộc Check lại quyền Crush với tên mới nhất
+        if (tempUserName && tempUserName.trim() !== "") serverState.userName = tempUserName.trim();
         serverState.isCrush = checkIsCrush(serverState.userName);
-        // ---------------------------------
 
         for (let i = 0; i < serverState.words.length; i++) {
           if (VOCAB_DB[i]) { 
@@ -618,22 +629,15 @@ async function fetchUserData(method) {
       }
       
       state = serverState;
-      
-      // Lưu thẳng lên Firebase
       setDoc(docRef, state).catch(e=>console.log(e));
       localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
       
-      // Ép màn hình vẽ lại để hiển thị chế độ Crush ngay lập tức
       initQueue(false); 
       showMainAppUI();
       loadWord(); 
-      setupDailyNotification();
       
-      if (!isCacheValid) {
-        showToast(`Chào mừng ${state.userName} quay lại!`);
-      } else if (tempUserName) {
-        showToast(`Đã cập nhật dữ liệu cho ${state.userName}`);
-      }
+      if (!isCacheValid) showToast(`Chào mừng ${state.userName} quay lại!`);
+      else if (tempUserName) showToast(`Đã cập nhật dữ liệu cho ${state.userName}`);
     });
   }
 
@@ -658,7 +662,7 @@ async function fetchUserData(method) {
     localStorage.removeItem('saved_guest_id'); location.reload();
   };
 
-  // --- LOGIC HỌC TẬP CHÍNH ---
+  // --- LOGIC HỌC TẬP ---
   document.getElementById('btnCheckin').onclick = () => {
     const today = new Date().toDateString();
     if(state.lastCheckin === today) return showToast('Hôm nay điểm danh rồi nha!');
@@ -703,7 +707,7 @@ async function fetchUserData(method) {
 
   document.getElementById('btnCheck').onclick = () => {
     let input = document.getElementById('focusInput').value;
-    if (!input.trim()) return showToast("Vui lòng nhập đáp án!"); // Chặn Enter trống
+    if (!input.trim()) return showToast("Vui lòng nhập đáp án!"); 
 
     const w = state.words.find(x => x.id === state.queue[0]);
     let target = testDirection === 'en-vi' ? w.m : w.w;
@@ -726,28 +730,18 @@ async function fetchUserData(method) {
   document.getElementById('btnReview').onclick = () => {
     let learned = state.words.filter(w => w.step > 0);
     if(learned.length < 3) return showToast("Học đúng thêm 3 từ nữa mới được ôn bài nha!");
-    
     reviewQueue = learned.sort(() => 0.5 - Math.random()).slice(0, 3);
-    currentRevIdx = 0;
-    document.getElementById('reviewModal').style.display = 'flex';
-    loadReviewWord();
+    currentRevIdx = 0; document.getElementById('reviewModal').style.display = 'flex'; loadReviewWord();
   };
 
   function loadReviewWord() {
     if (currentRevIdx >= 3) {
       document.getElementById('reviewModal').style.display = 'none';
       showToast("Ôn bài xong! Quá giỏi +15 EXP");
-      let oldXp = state.xp;
-      state.xp += 15; 
-      checkLevelUp(oldXp, state.xp);
-      save();
-      // Ép màn hình chính cập nhật sau khi học xong
-      updateUI(); loadWord();
-      return;
+      let oldXp = state.xp; state.xp += 15; checkLevelUp(oldXp, state.xp); save();
+      updateUI(); loadWord(); return;
     }
-
-    currentRevWord = reviewQueue[currentRevIdx];
-    revFails = 0; 
+    currentRevWord = reviewQueue[currentRevIdx]; revFails = 0; 
     document.getElementById('revProgress').innerText = currentRevIdx + 1;
     
     const inputEn = document.getElementById('revInputEn');
@@ -755,26 +749,21 @@ async function fetchUserData(method) {
     inputEn.style.display = 'none'; inputVi.style.display = 'none';
     inputEn.value = ''; inputVi.value = '';
     document.getElementById('revHardModeTip').style.display = 'none';
-
     let typeHtml = currentRevWord.t ? `<span class="word-type">${currentRevWord.t}</span>` : "";
 
     if (currentRevWord.step >= 3 && Math.random() > 0.5) {
-      revMode = 2; // Hard mode
+      revMode = 2; 
       document.getElementById('revWordDisplay').innerHTML = `???? ${typeHtml}`;
       document.getElementById('revHardModeTip').style.display = 'block';
-      inputEn.style.display = 'block';
-      inputVi.style.display = 'block';
-      inputEn.focus();
+      inputEn.style.display = 'block'; inputVi.style.display = 'block'; inputEn.focus();
     } else {
       revMode = Math.random() > 0.5 ? 0 : 1;
       if (revMode === 0) {
         document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.w} ${typeHtml}`;
-        inputVi.style.display = 'block';
-        inputVi.focus();
+        inputVi.style.display = 'block'; inputVi.focus();
       } else { 
         document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.m} ${typeHtml}`;
-        inputEn.style.display = 'block';
-        inputEn.focus();
+        inputEn.style.display = 'block'; inputEn.focus();
       }
     }
   }
@@ -789,43 +778,30 @@ async function fetchUserData(method) {
   };
 
   document.getElementById('btnCancelReview').onclick = () => {
-    document.getElementById('reviewModal').style.display = 'none';
-    updateUI(); loadWord();
+    document.getElementById('reviewModal').style.display = 'none'; updateUI(); loadWord();
   };
 
   document.getElementById('btnCheckReview').onclick = () => {
     let enAns = document.getElementById('revInputEn').value;
     let viAns = document.getElementById('revInputVi').value;
     
-    // Cảnh báo nếu ô nhập bị trống
     if (revMode === 0 && !viAns.trim()) return showToast("Vui lòng nhập nghĩa!");
     if (revMode === 1 && !enAns.trim()) return showToast("Vui lòng nhập từ tiếng Anh!");
     if (revMode === 2 && (!enAns.trim() || !viAns.trim())) return showToast("Vui lòng nhập đủ 2 ô!");
 
     let isCorrect = false;
-    if (revMode === 0) {
-      isCorrect = isAnswerCorrect(viAns, currentRevWord.m);
-    } else if (revMode === 1) {
-      isCorrect = isAnswerCorrect(enAns, currentRevWord.w);
-    } else { 
-      isCorrect = isAnswerCorrect(enAns, currentRevWord.w) && isAnswerCorrect(viAns, currentRevWord.m);
-    }
+    if (revMode === 0) isCorrect = isAnswerCorrect(viAns, currentRevWord.m);
+    else if (revMode === 1) isCorrect = isAnswerCorrect(enAns, currentRevWord.w);
+    else isCorrect = isAnswerCorrect(enAns, currentRevWord.w) && isAnswerCorrect(viAns, currentRevWord.m);
 
     if (isCorrect) {
       showToast("Chính xác! +5 EXP");
-      let oldXp = state.xp;
-      state.xp += 5;
-      checkLevelUp(oldXp, state.xp);
-      save(); 
-      currentRevIdx++;
-      loadReviewWord();
+      let oldXp = state.xp; state.xp += 5; checkLevelUp(oldXp, state.xp); save(); 
+      currentRevIdx++; loadReviewWord();
     } else {
-      revFails++;
-      state.xp = Math.max(0, state.xp - 5); 
-      save(); 
+      revFails++; state.xp = Math.max(0, state.xp - 5); save(); 
       if (state.isCrush && revFails >= 3) {
         document.getElementById('reviewModal').style.display = 'none';
-        
         let punishMessages = [
           `Quên bài rồi kìa cô nương! Từ "${currentRevWord.w}" nghĩa là "${currentRevWord.m}" nha. Đã thế mìn cho vào danh sách học lại từ đầu luôn!`,
           `Học trước quên sau là giỏi! Dám sai "${currentRevWord.w}" (${currentRevWord.m}) tới 3 lần. Phạt học lại từ này nhé!`,
@@ -833,35 +809,211 @@ async function fetchUserData(method) {
         ];
         document.getElementById('punishMsg').innerText = punishMessages[Math.floor(Math.random()*punishMessages.length)];
         document.getElementById('punishModal').style.display = 'flex';
-        
         let realWord = state.words.find(x => x.id === currentRevWord.id);
         if (realWord) {
-          realWord.step = 0;
-          realWord.nextTs = 0;
-          if(!state.queue.includes(realWord.id)) {
-            state.queue.unshift(realWord.id);
-          }
+          realWord.step = 0; realWord.nextTs = 0;
+          if(!state.queue.includes(realWord.id)) state.queue.unshift(realWord.id);
         }
         save();
-      } else {
-        showToast("Sai rồi nha! Bị trừ 5 EXP kìa, ráng nhớ lại xem!");
-      }
+      } else showToast("Sai rồi nha! Bị trừ 5 EXP kìa, ráng nhớ lại xem!");
     }
   };
 
   window.closePunishAndNext = function() {
     document.getElementById('punishModal').style.display = 'none';
     document.getElementById('reviewModal').style.display = 'flex';
-    currentRevIdx++; 
-    loadReviewWord();
+    currentRevIdx++; loadReviewWord();
   };
 
-  document.getElementById('revInputEn').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') document.getElementById('btnCheckReview').click();
+  document.getElementById('revInputEn').addEventListener('keypress', function (e) { if (e.key === 'Enter') document.getElementById('btnCheckReview').click(); });
+  document.getElementById('revInputVi').addEventListener('keypress', function (e) { if (e.key === 'Enter') document.getElementById('btnCheckReview').click(); });
+
+
+  // ==========================================
+  // LOGIC THI THỬ 15 PHÚT (MOCK TEST TỔNG HỢP)
+  // ==========================================
+  let mockTestQuestions = [];
+  let currentMockIdx = 0;
+  let mockCorrectCount = 0;
+  let mockTimerValue = 900; // 15 phút
+  let mockInterval;
+  let isMockMicListening = false;
+
+  document.getElementById('btnMockTest').onclick = () => {
+    let learnedWords = state.words.filter(w => w.step > 0);
+    if (learnedWords.length < 5) return showToast("Cần học ít nhất 5 từ vựng để mở khóa chức năng Thi thử!");
+    
+    // Tạo 15 câu hỏi
+    let unlearnedWords = state.words.filter(w => w.step === 0).sort(() => 0.5 - Math.random());
+    learnedWords = learnedWords.sort(() => 0.5 - Math.random());
+
+    mockTestQuestions = [];
+    
+    // 3 CÂU NÓI (Phát âm từ mới)
+    for(let i=0; i<3; i++) {
+        let w = unlearnedWords[i] || learnedWords[i]; // Lấy tạm từ cũ nếu hết từ mới
+        mockTestQuestions.push({ type: 'SPEAK', word: w });
+    }
+
+    // 12 CÂU NGHE / ĐỌC / VIẾT (Từ đã học)
+    for(let i=0; i<12; i++) {
+        let w = learnedWords[i % learnedWords.length]; // Đảm bảo ko lỗi index
+        let rnd = Math.random();
+        if (rnd < 0.33) mockTestQuestions.push({ type: 'LISTEN', word: w });
+        else if (rnd < 0.66) mockTestQuestions.push({ type: 'READ', word: w }); // Nhìn tiếng Anh gõ tiếng Việt
+        else mockTestQuestions.push({ type: 'WRITE', word: w }); // Nhìn tiếng Việt gõ tiếng Anh
+    }
+
+    // Xáo trộn ngẫu nhiên
+    mockTestQuestions.sort(() => 0.5 - Math.random());
+    
+    currentMockIdx = 0;
+    mockCorrectCount = 0;
+    mockTimerValue = 900; 
+    
+    document.getElementById('mockTestModal').style.display = 'flex';
+    clearInterval(mockInterval);
+    mockInterval = setInterval(updateMockTimer, 1000);
+    
+    loadMockQuestion();
+  };
+
+  function updateMockTimer() {
+    mockTimerValue--;
+    let m = Math.floor(mockTimerValue / 60);
+    let s = mockTimerValue % 60;
+    document.getElementById('mockTimerDisplay').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    if (mockTimerValue <= 0) endMockTest();
+  }
+
+  function loadMockQuestion() {
+    if (currentMockIdx >= 15) return endMockTest();
+    
+    document.getElementById('mockProgressText').innerText = `${currentMockIdx + 1}/15`;
+    let q = mockTestQuestions[currentMockIdx];
+    
+    let uiType = document.getElementById('mockQType');
+    let uiContent = document.getElementById('mockQContent');
+    let uiInput = document.getElementById('mockInput');
+    let btnAudio = document.getElementById('btnMockPlayAudio');
+    let btnMic = document.getElementById('btnMockMic');
+    let uiTranscript = document.getElementById('mockTranscript');
+    
+    uiInput.value = '';
+    uiTranscript.innerText = '';
+    btnMic.classList.remove('listening');
+
+    if (q.type === 'SPEAK') {
+        uiType.innerText = "KỸ NĂNG NÓI - PHÁT ÂM";
+        uiContent.innerText = q.word.w;
+        uiInput.style.display = 'none';
+        btnAudio.style.display = 'block';
+        btnMic.style.display = 'flex';
+    } else if (q.type === 'LISTEN') {
+        uiType.innerText = "KỸ NĂNG NGHE - CHÍNH TẢ";
+        uiContent.innerText = "🎧 Bấm nút để nghe...";
+        uiInput.style.display = 'block';
+        uiInput.placeholder = "Gõ từ tiếng Anh bạn nghe được...";
+        btnAudio.style.display = 'block';
+        btnMic.style.display = 'none';
+        // Auto play audio
+        setTimeout(() => { document.getElementById('btnMockPlayAudio').click(); }, 500);
+    } else if (q.type === 'READ') {
+        uiType.innerText = "KỸ NĂNG ĐỌC - DỊCH NGHĨA";
+        uiContent.innerHTML = `${q.word.w} <span style="font-size:16px;color:#a5b4fc">(${q.word.t})</span>`;
+        uiInput.style.display = 'block';
+        uiInput.placeholder = "Nhập nghĩa tiếng Việt...";
+        btnAudio.style.display = 'none';
+        btnMic.style.display = 'none';
+    } else if (q.type === 'WRITE') {
+        uiType.innerText = "KỸ NĂNG VIẾT - TỪ VỰNG";
+        uiContent.innerHTML = `${q.word.m} <span style="font-size:16px;color:#a5b4fc">(${q.word.t})</span>`;
+        uiInput.style.display = 'block';
+        uiInput.placeholder = "Nhập từ tiếng Anh...";
+        btnAudio.style.display = 'none';
+        btnMic.style.display = 'none';
+    }
+    
+    setTimeout(() => { if(uiInput.style.display !== 'none') uiInput.focus(); }, 100);
+  }
+
+  document.getElementById('btnMockPlayAudio').onclick = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      let u = new SpeechSynthesisUtterance(mockTestQuestions[currentMockIdx].word.w);
+      u.lang = 'en-US'; window.speechSynthesis.speak(u);
+    }
+  };
+
+  document.getElementById('btnMockMic').onclick = () => {
+    if (!recognition) return showToast("Trình duyệt không hỗ trợ nhận diện giọng nói!");
+    if (isMockMicListening) { recognition.stop(); return; }
+    
+    document.getElementById('mockTranscript').innerText = "Đang nghe... 🎤";
+    document.getElementById('btnMockMic').classList.add('listening');
+    recognition.start();
+    isMockMicListening = true;
+    
+    recognition.onresult = function(event) {
+        let transcript = event.results[0][0].transcript;
+        document.getElementById('mockTranscript').innerText = `Ghi nhận: "${transcript}"`;
+        document.getElementById('mockInput').value = transcript; // Auto fill hidden input
+        document.getElementById('btnMockMic').classList.remove('listening');
+        isMockMicListening = false;
+    };
+    recognition.onerror = function() {
+        document.getElementById('mockTranscript').innerText = "Không nghe được, thử lại!";
+        document.getElementById('btnMockMic').classList.remove('listening');
+        isMockMicListening = false;
+    };
+  };
+
+  document.getElementById('btnMockSubmit').onclick = () => {
+    let q = mockTestQuestions[currentMockIdx];
+    let input = document.getElementById('mockInput').value;
+    
+    if (q.type !== 'SPEAK' && !input.trim()) return showToast("Vui lòng nhập đáp án!");
+    if (q.type === 'SPEAK' && !input.trim()) return showToast("Vui lòng bấm Mic để đọc từ!");
+
+    let isCorrect = false;
+    if (q.type === 'READ') isCorrect = isAnswerCorrect(input, q.word.m);
+    else isCorrect = isAnswerCorrect(input, q.word.w); // Listen, Write, Speak all check English word
+
+    if (isCorrect) mockCorrectCount++;
+    
+    currentMockIdx++;
+    loadMockQuestion();
+  };
+
+  document.getElementById('mockInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') document.getElementById('btnMockSubmit').click();
   });
-  document.getElementById('revInputVi').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') document.getElementById('btnCheckReview').click();
-  });
+
+  function endMockTest() {
+    clearInterval(mockInterval);
+    document.getElementById('mockTestModal').style.display = 'none';
+    document.getElementById('mockResultModal').style.display = 'flex';
+    document.getElementById('mockFinalScore').innerText = `${mockCorrectCount}/15`;
+    
+    let msg = "";
+    if (mockCorrectCount === 15) {
+      msg = state.isCrush ? "Tuyệt đỉnh! Giỏi quá mức quy định rồi nha! Thưởng lớn nè (+100 EXP) 🥇" : "Điểm tuyệt đối! Xuất sắc! (+100 EXP)";
+      state.xp += 100;
+    } else if (mockCorrectCount >= 10) {
+      msg = state.isCrush ? "Rất tốt nha! Gần hoàn hảo rùi nè (+50 EXP) 🥈" : "Làm tốt lắm, kỹ năng rất vững! (+50 EXP)";
+      state.xp += 50;
+    } else if (mockCorrectCount >= 5) {
+      msg = state.isCrush ? "Tạm được á, nhưng mà cần cố gắng thêm chút nha! (+20 EXP) 🥉" : "Đạt mức trung bình. Cố gắng thêm nhé! (+20 EXP)";
+      state.xp += 20;
+    } else {
+      msg = state.isCrush ? "Trời ơi sai nhiều quá nè! Dũa lại bài vở đi nha! (+5 EXP) 💔" : "Điểm hơi thấp. Bạn cần ôn tập thêm nhiều đó! (+5 EXP)";
+      state.xp += 5;
+    }
+    
+    document.getElementById('mockResultMessage').innerText = msg;
+    save();
+    updateUI();
+  }
 
   // Khởi chạy App
   const savedGuestId = localStorage.getItem('saved_guest_id');
