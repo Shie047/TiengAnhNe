@@ -76,7 +76,6 @@
 
     .focus-meaning { font-size: clamp(20px, 6vw, 24px); color: #ccc; margin-bottom: 5px; }
     
-    /* Style mới cho vùng hiển thị ví dụ song ngữ */
     .example-container {
       background: rgba(0,0,0,0.2);
       padding: 15px;
@@ -280,10 +279,21 @@
     "Hint: Cố lên nhé, mìn luôn ủng hộ cou!"
   ];
 
-  // THUẬT TOÁN CHẤM ĐIỂM
+  // ==========================================
+  // THUẬT TOÁN CHẤM ĐIỂM (CẬP NHẬT: XÓA DẤU NGOẶC)
+  // ==========================================
   function isAnswerCorrect(userInput, targetAnswer) {
+    // 1. Chuẩn hóa chuỗi người dùng nhập (xóa khoảng trắng, chuyển chữ thường)
     let cleanInput = userInput.trim().toLowerCase().replace(/[.!?]/g, '');
-    let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => s.trim().replace(/[.!?]/g, ''));
+    
+    // 2. Tách nghĩa đích thành mảng dựa trên dấu phẩy hoặc gạch chéo
+    let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => {
+      // XÓA PHẦN TRONG NGOẶC (ví dụ "đường (ăn)" -> "đường ")
+      let withoutBrackets = s.replace(/\s*\(.*?\)\s*/g, ' ').trim();
+      return withoutBrackets.replace(/[.!?]/g, '');
+    });
+
+    // 3. So sánh
     return validTargets.includes(cleanInput);
   }
 
@@ -294,33 +304,48 @@
   let isVocabReady = false;
 
   async function loadVocabulary() {
-    let cachedVocab = localStorage.getItem('vocab_database');
-    
-    if (cachedVocab) {
-      let parsed = JSON.parse(cachedVocab);
-      // Kiểm tra xem dữ liệu có bản dịch ví dụ (exVi) chưa, nếu chưa thì xóa tải lại
-      if (parsed.length > 0 && parsed[0].exVi === undefined) {
-        console.log("Phát hiện từ điển cũ. Đang xóa để tải lại bản song ngữ...");
-        localStorage.removeItem('vocab_database');
-        cachedVocab = null; 
-      } else {
-        VOCAB_DB = parsed;
-        isVocabReady = true;
-        return;
-      }
-    }
+    // Để cho chắc chắn khi bạn đang test, mình ÉP XÓA CACHE luôn ở đây để nó tải mới 100%
+    localStorage.removeItem('vocab_database');
 
     try {
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
+      // Nếu trên Firebase có data chuẩn (có exVi)
       if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].exVi !== undefined) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
         // CẤU TRÚC MỚI (5 phần): Từ | Loại từ | Nghĩa | Ví dụ Anh | Nghĩa Ví dụ Việt
-        const RAW_VOCAB = [];
+        // LƯU Ý: Ở NGHĨA "Đường (ăn)", giờ user gõ "đường" là ĐÚNG
+        const RAW_VOCAB = [
+          "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.|Máy bay sẽ cất cánh sớm thôi.",
+          "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.|Tôi mong đợi được nghe tin từ bạn.",
+          "Break down|v|Hỏng hóc, Suy sụp|My car broke down on the way to work.|Xe của tôi bị hỏng trên đường đi làm.",
+          "Give up|v|Từ bỏ, Bỏ cuộc|Don't give up on your dreams.|Đừng từ bỏ ước mơ của bạn.",
+          "Figure out|v|Tìm ra, Hiểu ra|We need to figure out a solution.|Chúng ta cần tìm ra một giải pháp.",
+          "Bring up|v|Nuôi dưỡng, Đề cập|She brought up three children.|Cô ấy đã nuôi dưỡng ba đứa trẻ.",
+          "Call off|v|Hủy bỏ|The meeting was called off due to rain.|Cuộc họp đã bị hủy do trời mưa.",
+          "Catch up with|v|Bắt kịp|I need to catch up with my work.|Tôi cần bắt kịp tiến độ công việc.",
+          "Count on|v|Tin cậy, Dựa vào|You can count on me.|Bạn có thể tin cậy vào tôi.",
+          "Put off|v|Trì hoãn|Never put off until tomorrow what you can do today.|Đừng bao giờ trì hoãn đến ngày mai những việc có thể làm hôm nay.",
+          "Accept|v|Chấp nhận|She decided to accept the job offer.|Cô ấy quyết định chấp nhận lời mời làm việc.",
+          "Decision|n|Quyết định|It was a difficult decision to make.|Đó là một quyết định khó khăn.",
+          "Encourage|v|Động viên, Khuyến khích|My parents always encourage me.|Bố mẹ luôn động viên tôi.",
+          "Genuine|adj|Thành thật, Chân thật|She showed a genuine interest in our work.|Cô ấy thể hiện sự quan tâm chân thành đến công việc của chúng tôi.",
+          "Knowledge|n|Kiến thức|Knowledge is power.|Kiến thức là sức mạnh.",
+          "Beautiful|adj|Xinh đẹp, Đẹp|She is a beautiful girl.|Cô ấy là một cô gái xinh đẹp.",
+          "Quickly|adv|Nhanh chóng, Nhanh|He completed the task very quickly.|Anh ấy hoàn thành nhiệm vụ rất nhanh chóng.",
+          "Information|n|Thông tin|I need more information about the project.|Tôi cần thêm thông tin về dự án.",
+          "Wealth|n|Sự giàu có, Của cải|Health is better than wealth.|Sức khỏe quý hơn của cải.",
+          "Destiny|n|Định mệnh, Số phận|You cannot escape your destiny.|Bạn không thể trốn tránh định mệnh của mình.",
+          "Gorgeous|adj|Tuyệt đẹp, Lộng lẫy|You look absolutely gorgeous tonight.|Tối nay bạn trông thực sự lộng lẫy.",
+          "Ethereal|adj|Thanh tao, Siêu phàm|She has an ethereal beauty.|Cô ấy sở hữu một vẻ đẹp thanh tao.",
+          "Breathtaking|adj|Đẹp ngộp thở, Hấp dẫn|The view from the top is breathtaking.|Cảnh nhìn từ trên đỉnh đẹp đến ngộp thở.",
+          "Mesmerize|v|Mê hoặc, Quyến rũ|I was completely mesmerized by the performance.|Tôi đã hoàn toàn bị mê hoặc bởi màn trình diễn.",
+          "Sugar|n|Đường (ăn)|Add some sugar to the coffee.|Thêm chút đường vào cà phê."
+        ];
         
         VOCAB_DB = RAW_VOCAB.map(str => {
           let parts = str.split('|');
@@ -542,27 +567,16 @@
   };
 
   async function fetchUserData(method) {
-    let cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
-    
-    if (cachedData) {
-      state = JSON.parse(cachedData);
-      if (state.words.length > 0 && state.words[0].exVi === undefined) {
-        console.log("Tiến độ lưu cục bộ đã cũ. Đang tải bản mới từ máy chủ...");
-        state = null; 
-      } else {
-        showMainAppUI(); 
-        loadWord();
-      }
-    }
-
+    // Ở đoạn đầu đã ép xóa cache, nên giờ nó sẽ chạy thẳng vào block fetch Firebase
     await vocabLoadPromise; 
+    
     const docRef = doc(db, "users", currentUserDocId);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
       state = docSnap.data();
       
-      // ĐỒNG BỘ: Cập nhật từ điển mới nhất vào tiến độ học cũ của user
+      // ĐỒNG BỘ DATA CHO USER (Fix lỗi bị thiếu thông tin)
       for (let i = 0; i < state.words.length; i++) {
         if (VOCAB_DB[i]) { 
           state.words[i].t = VOCAB_DB[i].t || "";   
@@ -589,10 +603,7 @@
     initQueue(); 
     loadWord(); 
     setupDailyNotification();
-    
-    if (!cachedData) {
-      showToast(`Chào mừng ${state.userName} quay lại!`);
-    }
+    showToast(`Chào mừng ${state.userName} quay lại!`);
   }
 
   document.getElementById('btnGuestLogin').onclick = async () => {
