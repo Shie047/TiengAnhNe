@@ -61,7 +61,22 @@
 
     .focus-mode { text-align: center; padding: 10px 0; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
     .focus-word { font-size: clamp(36px, 10vw, 56px); font-weight: 900; margin-bottom: 10px; color: var(--accent2); word-break: break-word; line-height: 1.1;}
-    .focus-meaning { font-size: clamp(20px, 6vw, 24px); color: #ccc; margin-bottom: 15px; }
+    
+    /* Style mới cho Từ Loại (adj, v, n, adv) */
+    .word-type {
+      font-size: clamp(14px, 3vw, 18px);
+      color: #a5b4fc;
+      background: rgba(165, 180, 252, 0.15);
+      padding: 4px 10px;
+      border-radius: 8px;
+      vertical-align: middle;
+      margin-left: 10px;
+      font-weight: normal;
+      display: inline-block;
+    }
+
+    .focus-meaning { font-size: clamp(20px, 6vw, 24px); color: #ccc; margin-bottom: 5px; }
+    .focus-example { font-size: clamp(14px, 4vw, 16px); color: #a5b4fc; margin-bottom: 15px; font-style: italic; display: none; }
     .secret-hint { font-size: clamp(14px, 4vw, 16px); color: var(--accent2); font-style: italic; margin-bottom: 30px; display: none; min-height: 20px;}
     
     .focus-input { 
@@ -159,6 +174,7 @@
         <div id="studyArea">
           <div class="focus-word" id="focusWord">Đang tải...</div>
           <div class="focus-meaning" id="focusMeaning">---</div>
+          <div class="focus-example" id="focusExample">---</div>
           <div class="secret-hint" id="secretHint"></div>
           
           <input type="text" class="focus-input" id="focusInput" autocomplete="off">
@@ -249,13 +265,22 @@
   ];
 
   // ==========================================
-  // HỆ THỐNG QUẢN LÝ TỪ VỰNG TỐI ƯU
+  // THUẬT TOÁN CHẤM ĐIỂM THÔNG MINH (Chỉ cần 1 nghĩa)
+  // Tự tách nghĩa theo dấu phẩy/chấm phẩy, xóa khoảng trắng dư
+  // ==========================================
+  function isAnswerCorrect(userInput, targetAnswer) {
+    let cleanInput = userInput.trim().toLowerCase().replace(/[.!?]/g, '');
+    let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => s.trim().replace(/[.!?]/g, ''));
+    return validTargets.includes(cleanInput);
+  }
+
+  // ==========================================
+  // DỮ LIỆU CẤU TRÚC MỚI: Từ | Loại (v,n,adj...) | Nghĩa | Ví dụ
   // ==========================================
   let VOCAB_DB = [];
   let isVocabReady = false;
 
   async function loadVocabulary() {
-    // 1. Thử lấy từ Cache (LocalStorage) để load tức thì
     const cachedVocab = localStorage.getItem('vocab_database');
     if (cachedVocab) {
       VOCAB_DB = JSON.parse(cachedVocab);
@@ -263,30 +288,54 @@
       return;
     }
 
-    // 2. Nếu chưa có Cache, tải từ Firestore
     try {
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
-      if (vocabSnap.exists()) {
+      // Kiểm tra xem data trên Firebase đã có cấu trúc mới (chứa w.t) chưa
+      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].t) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
-        // LẦN CHẠY ĐẦU TIÊN: Tự động đưa mảng cứng lên Firestore
-        // Ghi chú: Sau khi chạy thành công lần đầu và data đã lên Firestore, 
-        // bạn có thể làm rỗng mảng RAW_VOCAB này để file HTML nhẹ đi.
-        const RAW_VOCAB = [];
+        // CẤU TRÚC MỚI: Thêm phần loại từ ở vị trí thứ 2
+        const RAW_VOCAB = [
+          "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.",
+          "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.",
+          "Break down|v|Hỏng hóc, Suy sụp|My car broke down on the way to work.",
+          "Give up|v|Từ bỏ, Bỏ cuộc|Don't give up on your dreams.",
+          "Figure out|v|Tìm ra, Hiểu ra|We need to figure out a solution.",
+          "Bring up|v|Nuôi dưỡng, Đề cập|She brought up three children.",
+          "Call off|v|Hủy bỏ|The meeting was called off due to rain.",
+          "Catch up with|v|Bắt kịp|I need to catch up with my work.",
+          "Count on|v|Tin cậy, Dựa vào|You can count on me.",
+          "Put off|v|Trì hoãn|Never put off until tomorrow what you can do today.",
+          "Accept|v|Chấp nhận|She decided to accept the job offer.",
+          "Decision|n|Quyết định|It was a difficult decision to make.",
+          "Encourage|v|Động viên, Khuyến khích|My parents always encourage me.",
+          "Genuine|adj|Thành thật, Chân thật|She showed a genuine interest in our work.",
+          "Knowledge|n|Kiến thức|Knowledge is power.",
+          "Beautiful|adj|Xinh đẹp, Đẹp|She is a beautiful girl.",
+          "Quickly|adv|Nhanh chóng, Nhanh|He completed the task very quickly.",
+          "Information|n|Thông tin|I need more information about the project.",
+          "Wealth|n|Sự giàu có, Của cải|Health is better than wealth.",
+          "Destiny|n|Định mệnh, Số phận|You cannot escape your destiny.",
+          "Gorgeous|adj|Tuyệt đẹp, Lộng lẫy|You look absolutely gorgeous tonight.",
+          "Ethereal|adj|Thanh tao, Siêu phàm|She has an ethereal beauty.",
+          "Breathtaking|adj|Đẹp ngộp thở, Hấp dẫn|The view from the top is breathtaking.",
+          "Mesmerize|v|Mê hoặc, Quyến rũ|I was completely mesmerized by the performance."
+        ];
         
         VOCAB_DB = RAW_VOCAB.map(str => {
           let parts = str.split('|');
-          return { w: parts[0], m: parts[1] };
+          // parts[0]: Từ vựng, parts[1]: Loại từ, parts[2]: Nghĩa, parts[3]: Ví dụ
+          return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "" };
         });
 
         await setDoc(vocabRef, { words: VOCAB_DB });
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
-        console.log("Đã khởi tạo Database từ vựng thành công!");
+        console.log("Đã khởi tạo Database từ vựng (Có Từ Loại) thành công!");
       }
     } catch (e) {
       console.error("Lỗi tải dữ liệu từ vựng:", e);
@@ -334,7 +383,6 @@
     };
   }
 
-  // --- HÀM RENDER UI TÁCH RỜI ĐỂ GỌI NHIỀU LẦN ---
   function showMainAppUI() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.opacity = '1';
@@ -345,11 +393,9 @@
 
   async function save() { 
     if(currentUserDocId && state) {
-      // LƯU VÀO CACHE TRƯỚC
       localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
       updateUI(); 
 
-      // ĐỒNG BỘ LÊN FIREBASE NGẦM
       try {
         await setDoc(doc(db, "users", currentUserDocId), state);
       } catch (e) {
@@ -410,8 +456,18 @@
     if(state.queue.length === 0) return;
     const w = state.words.find(x => x.id === state.queue[0]);
     currentWordAudio = w.w; 
-    document.getElementById('focusWord').innerText = w.w;
+    
+    // Hiển thị Từ vựng + Loại từ
+    document.getElementById('focusWord').innerHTML = `${w.w} <span class="word-type">${w.t}</span>`;
     document.getElementById('focusMeaning').innerText = w.m;
+    
+    // Hiển thị Ví dụ
+    if (w.ex && w.ex.trim() !== "") {
+      document.getElementById('focusExample').innerText = `"${w.ex}"`;
+      document.getElementById('focusExample').style.display = 'block';
+    } else {
+      document.getElementById('focusExample').style.display = 'none';
+    }
     
     if (state.isCrush) {
       document.getElementById('secretHint').innerText = SECRET_HINTS[Math.floor(Math.random() * SECRET_HINTS.length)];
@@ -490,14 +546,12 @@
   };
 
   async function fetchUserData(method) {
-    // 1. TẢI TỪ CACHE RA SHOW TRƯỚC
     const cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
     if (cachedData) {
       state = JSON.parse(cachedData);
       showMainAppUI(); 
     }
 
-    // 2. ĐỒNG BỘ DỮ LIỆU TỪ FIREBASE NGẦM
     await vocabLoadPromise; 
     const docRef = doc(db, "users", currentUserDocId);
     const docSnap = await getDoc(docRef);
@@ -514,10 +568,8 @@
       await setDoc(docRef, state);
     }
     
-    // Cập nhật lại Cache
     localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
     
-    // Render lại UI và khởi chạy
     showMainAppUI();
     initQueue(); 
     setupDailyNotification();
@@ -560,12 +612,19 @@
     const w = state.words.find(x => x.id === state.queue[0]);
     testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
     if (testDirection === 'en-vi') {
-      document.getElementById('focusWord').innerText = w.w;
+      document.getElementById('focusWord').innerHTML = `${w.w} <span class="word-type">${w.t}</span>`;
       document.getElementById('focusMeaning').innerText = '...';
+      document.getElementById('focusExample').style.display = 'none'; // Giấu ví dụ khi test
       document.getElementById('focusInput').placeholder = 'Gõ nghĩa tiếng Việt...';
     } else {
-      document.getElementById('focusWord').innerText = '...';
+      document.getElementById('focusWord').innerHTML = `... <span class="word-type">${w.t}</span>`;
       document.getElementById('focusMeaning').innerText = w.m;
+      // Khi gõ tiếng Anh, hiển thị ví dụ dạng gợi ý điền vào chỗ trống
+      if (w.ex) {
+        let hiddenEx = w.ex.replace(new RegExp(w.w, "gi"), "_____");
+        document.getElementById('focusExample').innerText = `Gợi ý: "${hiddenEx}"`;
+        document.getElementById('focusExample').style.display = 'block';
+      }
       document.getElementById('focusInput').placeholder = 'Gõ từ tiếng Anh...';
     }
     document.getElementById('secretHint').style.display = 'none'; 
@@ -583,9 +642,11 @@
 
   document.getElementById('btnCheck').onclick = () => {
     const w = state.words.find(x => x.id === state.queue[0]);
-    let input = document.getElementById('focusInput').value.trim().toLowerCase();
-    let target = testDirection === 'en-vi' ? w.m.toLowerCase() : w.w.toLowerCase();
-    if(input === target) markCorrect(); else showToast('Sai mất rồi, thử lại nhé!');
+    let input = document.getElementById('focusInput').value;
+    let target = testDirection === 'en-vi' ? w.m : w.w;
+    
+    if(isAnswerCorrect(input, target)) markCorrect(); 
+    else showToast('Sai mất rồi, thử lại nhé!');
   };
 
   document.getElementById('focusInput').addEventListener('keypress', function (e) {
@@ -632,7 +693,7 @@
 
     if (currentRevWord.step >= 3 && Math.random() > 0.5) {
       revMode = 2; // Hard mode
-      document.getElementById('revWordDisplay').innerText = "????";
+      document.getElementById('revWordDisplay').innerHTML = `???? <span class="word-type">${currentRevWord.t}</span>`;
       document.getElementById('revHardModeTip').style.display = 'block';
       inputEn.style.display = 'block';
       inputVi.style.display = 'block';
@@ -640,11 +701,11 @@
     } else {
       revMode = Math.random() > 0.5 ? 0 : 1;
       if (revMode === 0) {
-        document.getElementById('revWordDisplay').innerText = currentRevWord.w;
+        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.w} <span class="word-type">${currentRevWord.t}</span>`;
         inputVi.style.display = 'block';
         inputVi.focus();
       } else { 
-        document.getElementById('revWordDisplay').innerText = currentRevWord.m;
+        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.m} <span class="word-type">${currentRevWord.t}</span>`;
         inputEn.style.display = 'block';
         inputEn.focus();
       }
@@ -664,16 +725,16 @@
   };
 
   document.getElementById('btnCheckReview').onclick = () => {
-    let enAns = document.getElementById('revInputEn').value.trim().toLowerCase();
-    let viAns = document.getElementById('revInputVi').value.trim().toLowerCase();
+    let enAns = document.getElementById('revInputEn').value;
+    let viAns = document.getElementById('revInputVi').value;
     
     let isCorrect = false;
     if (revMode === 0) {
-      isCorrect = (viAns === currentRevWord.m.toLowerCase());
+      isCorrect = isAnswerCorrect(viAns, currentRevWord.m);
     } else if (revMode === 1) {
-      isCorrect = (enAns === currentRevWord.w.toLowerCase());
+      isCorrect = isAnswerCorrect(enAns, currentRevWord.w);
     } else { 
-      isCorrect = (enAns === currentRevWord.w.toLowerCase() && viAns === currentRevWord.m.toLowerCase());
+      isCorrect = isAnswerCorrect(enAns, currentRevWord.w) && isAnswerCorrect(viAns, currentRevWord.m);
     }
 
     if (isCorrect) {
