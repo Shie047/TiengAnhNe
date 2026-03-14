@@ -134,8 +134,8 @@
     <header class="panel">
       <div class="title" id="headerTitle">Góc Học Tập</div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
-        <button class="btn info" id="btnMockTest" style="padding: 8px 15px; font-size: 14px;">📝 Thi Thử</button>
-        <button class="btn success" id="btnNotify" style="padding: 8px 15px; font-size: 14px; display: none;">🔔</button>
+        <button class="btn info" id="btnMockTest" style="padding: 8px 15px; font-size: 14px;">Thi Thử</button>
+        <button class="btn success" id="btnNotify" style="padding: 8px 15px; font-size: 14px; display: none;"></button>
         <button class="btn warning" id="btnReview" style="padding: 8px 15px; font-size: 14px;">Ôn bài</button>
         <button class="btn primary" id="btnCheckin" style="padding: 8px 15px; font-size: 14px;">Điểm danh</button>
         <button class="btn danger" id="btnLogout" style="padding: 8px 15px; font-size: 14px;">Thoát</button>
@@ -270,20 +270,19 @@
   const auth = getAuth(app);
   const googleProvider = new GoogleAuthProvider();
 
-  // DANH HIỆU DÀNH RIÊNG CHO YẾN NGỌC (Hệ số x2 khoảng cách)
   const TITLES = [
     { reqXp: 0, name: "Người lạ ơi", msg: "Bắt đầu hành trình nhé!" },
-    { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },         // Đòi +100
-    { reqXp: 300, name: "Thiên thần tháng 3", msg: "Đáng yêu quá đi mất!" },           // Đòi +200
-    { reqXp: 700, name: "Ngoại lệ của anh", msg: "Học giỏi quá có thưởng nè!" },        // Đòi +400
-    { reqXp: 1500, name: "Nóc nhà tương lai", msg: "Pass điện thoại nộp ra đây!" }      // Đòi +800
+    { reqXp: 100, name: "Cô bé chăm chỉ", msg: "Chăm chỉ thế này giỏi quá!" },
+    { reqXp: 300, name: "Thiên thần tháng 3", msg: "Đáng yêu quá đi mất!" },
+    { reqXp: 700, name: "Ngoại lệ của anh", msg: "Học giỏi quá có thưởng nè!" },
+    { reqXp: 1500, name: "Nóc nhà tương lai", msg: "Pass điện thoại nộp ra đây!" }
   ];
 
   const SECRET_HINTS = [
     "Hint: Nụ cười của nàng là động lực để mìn làm cái web này đó.",
     "Hint: Học mệt thì nghỉ ngơi xíu nha, đừng ép bản thân quá.",
     "Hint: Cố lên nhé, cô gái tháng 3 tuyệt vời nhất thế giới!",
-    "Hint: Anh đã thức đêm chỉ để code cho em chức năng phát âm này đó 🥰"
+    "Hint: Anh đã thức đêm chỉ để code cho em chức năng phát âm này đó "
   ];
 
   // KHỞI TẠO BỘ NHẬN DIỆN GIỌNG NÓI
@@ -372,7 +371,6 @@
   let currentWordAudio = '';   
   let tempUserName = "";
 
-  // TÍNH TOÁN LEVEL NGƯỜI DÙNG THƯỜNG (Hệ số x2)
   function getNormalLevelData(xp) {
     let req = 100; let lvl = 1; let totalReq = 0;
     while(xp >= totalReq + req) {
@@ -389,8 +387,9 @@
 
   function checkIsCrush(name) {
     if (!name) return false;
-    let cleanName = removeAccents(name).trim().toLowerCase().replace(/\s+/g, ' '); 
-    return (cleanName === 'yen ngoc');
+    let cleanName = removeAccents(name).trim().toLowerCase();
+    // KIỂM TRA MẠNH MẼ HƠN: Chứa chữ "yen ngoc" là duyệt luôn
+    return cleanName.includes('yen ngoc'); 
   }
 
   function getDefaultState(name, method) {
@@ -533,7 +532,7 @@
 
   window.playAudio = function() {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      window.speechSynthesis.cancel(); 
       let u = new SpeechSynthesisUtterance(currentWordAudio);
       u.lang = 'en-US'; window.speechSynthesis.speak(u);
     } else showToast('Trình duyệt không hỗ trợ đọc âm thanh');
@@ -558,7 +557,7 @@
         
         let oldXp = state.xp; state.xp += 5; checkLevelUp(oldXp, state.xp); save();
       } else {
-        if (state.isCrush) showToast(`Ủa em đọc là '${transcript}' hả? Dễ thương xỉu nhưng sai xíu rùi, nghe mẫu và thử lại nha! 🥰`);
+        if (state.isCrush) showToast(`Ủa em đọc là '${transcript}' hả? Dễ thương xỉu nhưng sai xíu rùi, nghe mẫu và thử lại nha!`);
         else showToast(`Hệ thống nhận diện là '${transcript}'. Cố gắng uốn lưỡi lại chút nhé!`);
       }
     };
@@ -607,7 +606,13 @@
       let serverState = null;
       if (docSnap.exists()) {
         serverState = docSnap.data();
-        if (tempUserName && tempUserName.trim() !== "") serverState.userName = tempUserName.trim();
+        
+        // NẾU CÓ TÊN MỚI THÌ ÉP GHI ĐÈ LÊN SERVERSTATE
+        if (tempUserName && tempUserName.trim() !== "") {
+          serverState.userName = tempUserName.trim();
+        }
+        
+        // KIỂM TRA LẠI ISCRUSH TỪ TÊN MỚI NHẤT
         serverState.isCrush = checkIsCrush(serverState.userName);
 
         for (let i = 0; i < serverState.words.length; i++) {
@@ -632,6 +637,7 @@
       setDoc(docRef, state).catch(e=>console.log(e));
       localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
       
+
       initQueue(false); 
       showMainAppUI();
       loadWord(); 
@@ -662,7 +668,7 @@
     localStorage.removeItem('saved_guest_id'); location.reload();
   };
 
-  // --- LOGIC HỌC TẬP ---
+
   document.getElementById('btnCheckin').onclick = () => {
     const today = new Date().toDateString();
     if(state.lastCheckin === today) return showToast('Hôm nay điểm danh rồi nha!');
@@ -720,7 +726,6 @@
     if (e.key === 'Enter') document.getElementById('btnCheck').click();
   });
 
-  // --- LOGIC ÔN TẬP ---
   let reviewQueue = [];
   let currentRevIdx = 0;
   let revFails = 0;
@@ -730,8 +735,11 @@
   document.getElementById('btnReview').onclick = () => {
     let learned = state.words.filter(w => w.step > 0);
     if(learned.length < 3) return showToast("Học đúng thêm 3 từ nữa mới được ôn bài nha!");
+    
     reviewQueue = learned.sort(() => 0.5 - Math.random()).slice(0, 3);
-    currentRevIdx = 0; document.getElementById('reviewModal').style.display = 'flex'; loadReviewWord();
+    currentRevIdx = 0;
+    document.getElementById('reviewModal').style.display = 'flex';
+    loadReviewWord();
   };
 
   function loadReviewWord() {
@@ -739,9 +747,12 @@
       document.getElementById('reviewModal').style.display = 'none';
       showToast("Ôn bài xong! Quá giỏi +15 EXP");
       let oldXp = state.xp; state.xp += 15; checkLevelUp(oldXp, state.xp); save();
-      updateUI(); loadWord(); return;
+      updateUI(); loadWord();
+      return;
     }
-    currentRevWord = reviewQueue[currentRevIdx]; revFails = 0; 
+
+    currentRevWord = reviewQueue[currentRevIdx];
+    revFails = 0; 
     document.getElementById('revProgress').innerText = currentRevIdx + 1;
     
     const inputEn = document.getElementById('revInputEn');
@@ -749,21 +760,26 @@
     inputEn.style.display = 'none'; inputVi.style.display = 'none';
     inputEn.value = ''; inputVi.value = '';
     document.getElementById('revHardModeTip').style.display = 'none';
+
     let typeHtml = currentRevWord.t ? `<span class="word-type">${currentRevWord.t}</span>` : "";
 
     if (currentRevWord.step >= 3 && Math.random() > 0.5) {
       revMode = 2; 
       document.getElementById('revWordDisplay').innerHTML = `???? ${typeHtml}`;
       document.getElementById('revHardModeTip').style.display = 'block';
-      inputEn.style.display = 'block'; inputVi.style.display = 'block'; inputEn.focus();
+      inputEn.style.display = 'block';
+      inputVi.style.display = 'block';
+      inputEn.focus();
     } else {
       revMode = Math.random() > 0.5 ? 0 : 1;
       if (revMode === 0) {
         document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.w} ${typeHtml}`;
-        inputVi.style.display = 'block'; inputVi.focus();
+        inputVi.style.display = 'block';
+        inputVi.focus();
       } else { 
         document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.m} ${typeHtml}`;
-        inputEn.style.display = 'block'; inputEn.focus();
+        inputEn.style.display = 'block';
+        inputEn.focus();
       }
     }
   }
@@ -778,7 +794,8 @@
   };
 
   document.getElementById('btnCancelReview').onclick = () => {
-    document.getElementById('reviewModal').style.display = 'none'; updateUI(); loadWord();
+    document.getElementById('reviewModal').style.display = 'none';
+    updateUI(); loadWord();
   };
 
   document.getElementById('btnCheckReview').onclick = () => {
@@ -829,13 +846,10 @@
   document.getElementById('revInputVi').addEventListener('keypress', function (e) { if (e.key === 'Enter') document.getElementById('btnCheckReview').click(); });
 
 
-  // ==========================================
-  // LOGIC THI THỬ 15 PHÚT (MOCK TEST TỔNG HỢP)
-  // ==========================================
   let mockTestQuestions = [];
   let currentMockIdx = 0;
   let mockCorrectCount = 0;
-  let mockTimerValue = 900; // 15 phút
+  let mockTimerValue = 900; 
   let mockInterval;
   let isMockMicListening = false;
 
@@ -843,28 +857,24 @@
     let learnedWords = state.words.filter(w => w.step > 0);
     if (learnedWords.length < 5) return showToast("Cần học ít nhất 5 từ vựng để mở khóa chức năng Thi thử!");
     
-    // Tạo 15 câu hỏi
     let unlearnedWords = state.words.filter(w => w.step === 0).sort(() => 0.5 - Math.random());
     learnedWords = learnedWords.sort(() => 0.5 - Math.random());
 
     mockTestQuestions = [];
     
-    // 3 CÂU NÓI (Phát âm từ mới)
     for(let i=0; i<3; i++) {
-        let w = unlearnedWords[i] || learnedWords[i]; // Lấy tạm từ cũ nếu hết từ mới
+        let w = unlearnedWords[i] || learnedWords[i]; 
         mockTestQuestions.push({ type: 'SPEAK', word: w });
     }
 
-    // 12 CÂU NGHE / ĐỌC / VIẾT (Từ đã học)
     for(let i=0; i<12; i++) {
-        let w = learnedWords[i % learnedWords.length]; // Đảm bảo ko lỗi index
+        let w = learnedWords[i % learnedWords.length]; 
         let rnd = Math.random();
         if (rnd < 0.33) mockTestQuestions.push({ type: 'LISTEN', word: w });
-        else if (rnd < 0.66) mockTestQuestions.push({ type: 'READ', word: w }); // Nhìn tiếng Anh gõ tiếng Việt
-        else mockTestQuestions.push({ type: 'WRITE', word: w }); // Nhìn tiếng Việt gõ tiếng Anh
+        else if (rnd < 0.66) mockTestQuestions.push({ type: 'READ', word: w }); 
+        else mockTestQuestions.push({ type: 'WRITE', word: w }); 
     }
 
-    // Xáo trộn ngẫu nhiên
     mockTestQuestions.sort(() => 0.5 - Math.random());
     
     currentMockIdx = 0;
@@ -916,7 +926,6 @@
         uiInput.placeholder = "Gõ từ tiếng Anh bạn nghe được...";
         btnAudio.style.display = 'block';
         btnMic.style.display = 'none';
-        // Auto play audio
         setTimeout(() => { document.getElementById('btnMockPlayAudio').click(); }, 500);
     } else if (q.type === 'READ') {
         uiType.innerText = "KỸ NĂNG ĐỌC - DỊCH NGHĨA";
@@ -949,7 +958,7 @@
     if (!recognition) return showToast("Trình duyệt không hỗ trợ nhận diện giọng nói!");
     if (isMockMicListening) { recognition.stop(); return; }
     
-    document.getElementById('mockTranscript').innerText = "Đang nghe... 🎤";
+    document.getElementById('mockTranscript').innerText = "Đang nghe...";
     document.getElementById('btnMockMic').classList.add('listening');
     recognition.start();
     isMockMicListening = true;
@@ -957,7 +966,7 @@
     recognition.onresult = function(event) {
         let transcript = event.results[0][0].transcript;
         document.getElementById('mockTranscript').innerText = `Ghi nhận: "${transcript}"`;
-        document.getElementById('mockInput').value = transcript; // Auto fill hidden input
+        document.getElementById('mockInput').value = transcript; 
         document.getElementById('btnMockMic').classList.remove('listening');
         isMockMicListening = false;
     };
@@ -977,7 +986,7 @@
 
     let isCorrect = false;
     if (q.type === 'READ') isCorrect = isAnswerCorrect(input, q.word.m);
-    else isCorrect = isAnswerCorrect(input, q.word.w); // Listen, Write, Speak all check English word
+    else isCorrect = isAnswerCorrect(input, q.word.w); 
 
     if (isCorrect) mockCorrectCount++;
     
@@ -1000,7 +1009,7 @@
       msg = state.isCrush ? "Tuyệt đỉnh! Giỏi quá mức quy định rồi nha! Thưởng lớn nè (+100 EXP)" : "Điểm tuyệt đối! Xuất sắc! (+100 EXP)";
       state.xp += 100;
     } else if (mockCorrectCount >= 10) {
-      msg = state.isCrush ? "Rất tốt nha! Gần hoàn hảo rùi nè (+50 EXP) 🥈" : "Làm tốt lắm, kỹ năng rất vững! (+50 EXP)";
+      msg = state.isCrush ? "Rất tốt nha! Gần hoàn hảo rùi nè (+50 EXP)" : "Làm tốt lắm, kỹ năng rất vững! (+50 EXP)";
       state.xp += 50;
     } else if (mockCorrectCount >= 5) {
       msg = state.isCrush ? "Tạm được á, nhưng mà cần cố gắng thêm chút nha! (+20 EXP)" : "Đạt mức trung bình. Cố gắng thêm nhé! (+20 EXP)";
@@ -1015,7 +1024,6 @@
     updateUI();
   }
 
-  // Khởi chạy App
   const savedGuestId = localStorage.getItem('saved_guest_id');
   if (savedGuestId) {
     currentUserDocId = savedGuestId; fetchUserData('guest');
