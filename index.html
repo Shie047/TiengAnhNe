@@ -62,7 +62,6 @@
     .focus-mode { text-align: center; padding: 10px 0; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
     .focus-word { font-size: clamp(36px, 10vw, 56px); font-weight: 900; margin-bottom: 10px; color: var(--accent2); word-break: break-word; line-height: 1.1;}
     
-    /* Style mới cho Từ Loại (adj, v, n, adv) */
     .word-type {
       font-size: clamp(14px, 3vw, 18px);
       color: #a5b4fc;
@@ -264,10 +263,7 @@
     "Hint: Cố lên nhé, mìn luôn ủng hộ cou!"
   ];
 
-  // ==========================================
-  // THUẬT TOÁN CHẤM ĐIỂM THÔNG MINH (Chỉ cần 1 nghĩa)
-  // Tự tách nghĩa theo dấu phẩy/chấm phẩy, xóa khoảng trắng dư
-  // ==========================================
+  // THUẬT TOÁN CHẤM ĐIỂM
   function isAnswerCorrect(userInput, targetAnswer) {
     let cleanInput = userInput.trim().toLowerCase().replace(/[.!?]/g, '');
     let validTargets = targetAnswer.toLowerCase().split(/[,;/]/).map(s => s.trim().replace(/[.!?]/g, ''));
@@ -275,30 +271,38 @@
   }
 
   // ==========================================
-  // DỮ LIỆU CẤU TRÚC MỚI: Từ | Loại (v,n,adj...) | Nghĩa | Ví dụ
+  // HỆ THỐNG DỮ LIỆU TỪ VỰNG TỐI ƯU
   // ==========================================
   let VOCAB_DB = [];
   let isVocabReady = false;
 
   async function loadVocabulary() {
-    const cachedVocab = localStorage.getItem('vocab_database');
+    let cachedVocab = localStorage.getItem('vocab_database');
+    
+    // TỰ ĐỘNG XÓA CACHE NẾU LÀ BẢN CŨ KHÔNG CÓ LOẠI TỪ
     if (cachedVocab) {
-      VOCAB_DB = JSON.parse(cachedVocab);
-      isVocabReady = true;
-      return;
+      let parsed = JSON.parse(cachedVocab);
+      if (parsed.length > 0 && parsed[0].t === undefined) {
+        console.log("Phát hiện từ điển cũ (không có loại từ). Đang xóa để tải lại...");
+        localStorage.removeItem('vocab_database');
+        cachedVocab = null; // Bắt buộc tải lại
+      } else {
+        VOCAB_DB = parsed;
+        isVocabReady = true;
+        return;
+      }
     }
 
     try {
       const vocabRef = doc(db, "system", "vocab");
       const vocabSnap = await getDoc(vocabRef);
 
-      // Kiểm tra xem data trên Firebase đã có cấu trúc mới (chứa w.t) chưa
-      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].t) {
+      if (vocabSnap.exists() && vocabSnap.data().words && vocabSnap.data().words[0].t !== undefined) {
         VOCAB_DB = vocabSnap.data().words;
         localStorage.setItem('vocab_database', JSON.stringify(VOCAB_DB));
         isVocabReady = true;
       } else {
-        // CẤU TRÚC MỚI: Thêm phần loại từ ở vị trí thứ 2
+        // CẤU TRÚC MỚI: Từ | Loại từ | Nghĩa | Ví dụ
         const RAW_VOCAB = [
           "Take off|v|Cất cánh, Cởi ra|The plane will take off soon.",
           "Look forward to|v|Mong đợi, Trông chờ|I look forward to hearing from you.",
@@ -328,7 +332,6 @@
         
         VOCAB_DB = RAW_VOCAB.map(str => {
           let parts = str.split('|');
-          // parts[0]: Từ vựng, parts[1]: Loại từ, parts[2]: Nghĩa, parts[3]: Ví dụ
           return { w: parts[0], t: parts[1], m: parts[2], ex: parts[3] || "" };
         });
 
@@ -449,7 +452,6 @@
       let due = state.words.filter(w => w.nextTs <= Date.now()).sort(()=>0.5 - Math.random()).slice(0, 5);
       state.queue = due.map(w => w.id);
     }
-    save(); loadWord(); 
   }
 
   function loadWord() {
@@ -457,8 +459,9 @@
     const w = state.words.find(x => x.id === state.queue[0]);
     currentWordAudio = w.w; 
     
-    // Hiển thị Từ vựng + Loại từ
-    document.getElementById('focusWord').innerHTML = `${w.w} <span class="word-type">${w.t}</span>`;
+    // Hiển thị Từ vựng + Loại từ an toàn (chống undefined)
+    let typeHtml = w.t ? `<span class="word-type">${w.t}</span>` : "";
+    document.getElementById('focusWord').innerHTML = `${w.w} ${typeHtml}`;
     document.getElementById('focusMeaning').innerText = w.m;
     
     // Hiển thị Ví dụ
@@ -545,11 +548,19 @@
     document.getElementById('step1Name').style.display = 'block';
   };
 
-async function fetchUserData(method) {
-    const cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
+  async function fetchUserData(method) {
+    let cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
+    
+    // NẾU CACHE USER CŨ BỊ LỖI (CHƯA CÓ THUỘC TÍNH "t"), XÓA LUÔN KHÔNG DÙNG
     if (cachedData) {
       state = JSON.parse(cachedData);
-      showMainAppUI(); 
+      if (state.words.length > 0 && state.words[0].t === undefined) {
+        console.log("Tiến độ lưu cục bộ đã cũ. Đang tải bản mới từ máy chủ...");
+        state = null; // Ép tải lại
+      } else {
+        showMainAppUI(); 
+        loadWord();
+      }
     }
 
     await vocabLoadPromise; 
@@ -559,17 +570,17 @@ async function fetchUserData(method) {
     if (docSnap.exists()) {
       state = docSnap.data();
       
-      // BƯỚC SỬA LỖI UNDEFINED: Cập nhật từ điển mới nhất vào data cũ của user
+      // ĐỒNG BỘ: Cập nhật từ điển mới nhất (kèm t, ex) vào tiến độ học cũ của user
       for (let i = 0; i < state.words.length; i++) {
-        if (VOCAB_DB[i]) { // Đảm bảo từ đó vẫn tồn tại trong Data gốc
-          state.words[i].t = VOCAB_DB[i].t || "";   // Cập nhật loại từ
-          state.words[i].ex = VOCAB_DB[i].ex || ""; // Cập nhật ví dụ
-          state.words[i].m = VOCAB_DB[i].m;         // Cập nhật lại nghĩa (phòng khi bạn sửa nghĩa)
-          state.words[i].w = VOCAB_DB[i].w;         // Cập nhật lại từ
+        if (VOCAB_DB[i]) { 
+          state.words[i].t = VOCAB_DB[i].t || "";   
+          state.words[i].ex = VOCAB_DB[i].ex || ""; 
+          state.words[i].m = VOCAB_DB[i].m;         
+          state.words[i].w = VOCAB_DB[i].w;         
         }
       }
 
-      // Thêm các từ hoàn toàn mới nếu Database có thêm từ vựng
+      // Thêm các từ hoàn toàn mới nếu Database có thêm
       if(state.words.length < VOCAB_DB.length) {
         for(let i = state.words.length; i < VOCAB_DB.length; i++) {
           state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
@@ -577,13 +588,15 @@ async function fetchUserData(method) {
       }
     } else {
       if (!state) state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
-      await setDoc(docRef, state);
     }
     
+    // Lưu đè lên Firebase ngay lập tức để fix triệt để
+    await setDoc(docRef, state);
     localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
     
     showMainAppUI();
     initQueue(); 
+    loadWord(); // ÉP MÀN HÌNH VẼ LẠI CHỮ SAU KHI ĐÃ SỬA XONG LỖI
     setupDailyNotification();
     
     if (!cachedData) {
@@ -623,13 +636,15 @@ async function fetchUserData(method) {
   document.getElementById('btnStartTest').onclick = () => {
     const w = state.words.find(x => x.id === state.queue[0]);
     testDirection = Math.random() > 0.5 ? 'en-vi' : 'vi-en'; 
+    let typeHtml = w.t ? `<span class="word-type">${w.t}</span>` : "";
+
     if (testDirection === 'en-vi') {
-      document.getElementById('focusWord').innerHTML = `${w.w} <span class="word-type">${w.t}</span>`;
+      document.getElementById('focusWord').innerHTML = `${w.w} ${typeHtml}`;
       document.getElementById('focusMeaning').innerText = '...';
       document.getElementById('focusExample').style.display = 'none'; // Giấu ví dụ khi test
       document.getElementById('focusInput').placeholder = 'Gõ nghĩa tiếng Việt...';
     } else {
-      document.getElementById('focusWord').innerHTML = `... <span class="word-type">${w.t}</span>`;
+      document.getElementById('focusWord').innerHTML = `... ${typeHtml}`;
       document.getElementById('focusMeaning').innerText = w.m;
       // Khi gõ tiếng Anh, hiển thị ví dụ dạng gợi ý điền vào chỗ trống
       if (w.ex) {
@@ -703,9 +718,11 @@ async function fetchUserData(method) {
     inputEn.value = ''; inputVi.value = '';
     document.getElementById('revHardModeTip').style.display = 'none';
 
+    let typeHtml = currentRevWord.t ? `<span class="word-type">${currentRevWord.t}</span>` : "";
+
     if (currentRevWord.step >= 3 && Math.random() > 0.5) {
       revMode = 2; // Hard mode
-      document.getElementById('revWordDisplay').innerHTML = `???? <span class="word-type">${currentRevWord.t}</span>`;
+      document.getElementById('revWordDisplay').innerHTML = `???? ${typeHtml}`;
       document.getElementById('revHardModeTip').style.display = 'block';
       inputEn.style.display = 'block';
       inputVi.style.display = 'block';
@@ -713,11 +730,11 @@ async function fetchUserData(method) {
     } else {
       revMode = Math.random() > 0.5 ? 0 : 1;
       if (revMode === 0) {
-        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.w} <span class="word-type">${currentRevWord.t}</span>`;
+        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.w} ${typeHtml}`;
         inputVi.style.display = 'block';
         inputVi.focus();
       } else { 
-        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.m} <span class="word-type">${currentRevWord.t}</span>`;
+        document.getElementById('revWordDisplay').innerHTML = `${currentRevWord.m} ${typeHtml}`;
         inputEn.style.display = 'block';
         inputEn.focus();
       }
