@@ -562,50 +562,79 @@
     document.getElementById('step1Name').style.display = 'block';
   };
 
-  async function fetchUserData(method) {
+async function fetchUserData(method) {
     let cachedData = localStorage.getItem(`user_cache_${currentUserDocId}`);
+    let isCacheValid = false;
     
-    await vocabLoadPromise; 
-    const docRef = doc(db, "users", currentUserDocId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      state = docSnap.data();
+    // BƯỚC 1: HIỆN GIAO DIỆN TỪ CACHE (NẾU CÓ)
+    if (cachedData) {
+      state = JSON.parse(cachedData);
+      if (state.words && state.words.length > 0 && state.words[0].exVi !== undefined) {
+        isCacheValid = true;
+        initQueue(false); 
+        showMainAppUI(); 
+        loadWord();
+        setupDailyNotification();
+      }
+    }
+
+    if (!isCacheValid) showToast('Đang đồng bộ dữ liệu...');
+
+    // BƯỚC 2: KÉO DATA TỪ FIREBASE VÀ CẬP NHẬT NGẦM
+    vocabLoadPromise.then(async () => {
+      const docRef = doc(db, "users", currentUserDocId);
+      const docSnap = await getDoc(docRef);
       
-      // ÉP KIỂU LẠI CHẾ ĐỘ ISCRUSH (Chuẩn hóa bỏ dấu và khoảng trắng)
-      state.isCrush = checkIsCrush(state.userName);
-
-      for (let i = 0; i < state.words.length; i++) {
-        if (VOCAB_DB[i]) { 
-          state.words[i].t = VOCAB_DB[i].t || "";   
-          state.words[i].ex = VOCAB_DB[i].ex || ""; 
-          state.words[i].exVi = VOCAB_DB[i].exVi || ""; 
-          state.words[i].m = VOCAB_DB[i].m;         
-          state.words[i].w = VOCAB_DB[i].w;         
+      let serverState = null;
+      if (docSnap.exists()) {
+        serverState = docSnap.data();
+        
+        // --- ĐÂY LÀ ĐOẠN FIX LỖI CRUSH ---
+        // Nếu bạn gõ tên ở ô đăng nhập, hệ thống sẽ lấy tên mới cập nhật lên Firebase
+        if (tempUserName && tempUserName.trim() !== "") {
+          serverState.userName = tempUserName.trim();
         }
-      }
 
-      if(state.words.length < VOCAB_DB.length) {
-        for(let i = state.words.length; i < VOCAB_DB.length; i++) {
-          state.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
+        // Bắt buộc Check lại quyền Crush với tên mới nhất
+        serverState.isCrush = checkIsCrush(serverState.userName);
+        // ---------------------------------
+
+        for (let i = 0; i < serverState.words.length; i++) {
+          if (VOCAB_DB[i]) { 
+            serverState.words[i].t = VOCAB_DB[i].t || "";   
+            serverState.words[i].ex = VOCAB_DB[i].ex || ""; 
+            serverState.words[i].exVi = VOCAB_DB[i].exVi || ""; 
+            serverState.words[i].m = VOCAB_DB[i].m;         
+            serverState.words[i].w = VOCAB_DB[i].w;         
+          }
         }
+        if(serverState.words.length < VOCAB_DB.length) {
+          for(let i = serverState.words.length; i < VOCAB_DB.length; i++) {
+            serverState.words.push({id: i, ...VOCAB_DB[i], nextTs:0, step:0});
+          }
+        }
+      } else {
+        serverState = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
       }
-    } else {
-      if (!state) state = getDefaultState(tempUserName || "Người dùng ẩn danh", method);
-    }
-    
-    await setDoc(docRef, state);
-    localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
-    
-    // Khởi chạy hàng đợi trước khi vẽ UI để tránh flash màn hình "Hoàn thành"
-    initQueue(false); 
-    showMainAppUI();
-    loadWord(); 
-    setupDailyNotification();
-    
-    if (!cachedData) {
-      showToast(`Chào mừng ${state.userName} quay lại!`);
-    }
+      
+      state = serverState;
+      
+      // Lưu thẳng lên Firebase
+      setDoc(docRef, state).catch(e=>console.log(e));
+      localStorage.setItem(`user_cache_${currentUserDocId}`, JSON.stringify(state));
+      
+      // Ép màn hình vẽ lại để hiển thị chế độ Crush ngay lập tức
+      initQueue(false); 
+      showMainAppUI();
+      loadWord(); 
+      setupDailyNotification();
+      
+      if (!isCacheValid) {
+        showToast(`Chào mừng ${state.userName} quay lại!`);
+      } else if (tempUserName) {
+        showToast(`Đã cập nhật dữ liệu cho ${state.userName}`);
+      }
+    });
   }
 
   document.getElementById('btnGuestLogin').onclick = async () => {
